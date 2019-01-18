@@ -6,7 +6,7 @@ Livox SDK consists of Livox SDK communication protocol, Livox SDK core, Livox SD
 
 # Livox SDK Communication Protocol
 
-Livox SDK communication protocol opens to all users. It is the communication protocol between user programs and Livox products. The protocol consists of control commands and data format. Please refer to the [Livox SDK Communication Protocol][https://www.livoxtech.com/sdk/downloads] for detailed information.
+Livox SDK communication protocol opens to all users. It is the communication protocol between user programs and Livox products. The protocol consists of control commands and data format. Please refer to the [Livox SDK Communication Protocol](https://www.livoxtech.com/sdk/downloads) for detailed information.
 
 # Livox SDK Core
 
@@ -20,7 +20,7 @@ The Livox LiDAR sensors can be connected to host directly or through the Livox H
 
 # Livox SDK API
 
-Livox SDK API provides a set of C style functions which can be conveniently integrated in C/C++ programs. Please refer to the [Livox SDK API Reference][https://www.livoxtech.com/sdk/downloads] for detailed information.
+Livox SDK API provides a set of C style functions which can be conveniently integrated in C/C++ programs. Please refer to the [Livox SDK API Reference](https://www.livoxtech.com/sdk/downloads) for detailed information.
 
 ## Build Notes
 
@@ -51,7 +51,7 @@ sudo apt install \
 
 ###### Compile the Source Code
 
-You can download the apr source code from [http://apr.apache.org/download.cgi][id] and boost source code from [http://sourceforge.net/projects/boost/files/boost/1.54.0/][id] .The following commands can be used to compile and install it.
+You can download the apr source code from http://apr.apache.org/download.cgi and boost source code from http://sourceforge.net/projects/boost/files/boost/1.54.0/.The following commands can be used to compile and install it.
 
 ```
 tar zxf apr-1.6.5.tar.gz && \
