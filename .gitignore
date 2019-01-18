@@ -1,32 +1,14 @@
-# Prerequisites
-*.d
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# ignore dir
+#build/
+build/*.txt
+build/Makefile
+build/*.cmake
+build/CMakeFiles
+build/sdk_core
+build/sample
 
-# Precompiled Headers
-*.gch
-*.pch
+#whitelist
+!build/notes.txt
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
 
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
