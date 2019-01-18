@@ -1,0 +1,6 @@
+// 2019/01/07
+The purpose of adding this file is to commit the build folder to git.
+
+// Must build the project in this folder,for example:
+cmake ..       // generate makefile,in the project root directory.
+make           // build the project.
