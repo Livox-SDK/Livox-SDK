@@ -51,7 +51,7 @@ sudo apt install \
 
 ###### Compile the Source Code
 
-You can download the apr source code from http://apr.apache.org/download.cgi and boost source code from http://sourceforge.net/projects/boost/files/boost/1.54.0/.The following commands can be used to compile and install it.
+You can download the apr source code from http://apr.apache.org/download.cgi and boost source code from http://sourceforge.net/projects/boost/files/boost/1.54.0/. The following commands can be used to compile and install it.
 
 ```
 tar zxf apr-1.6.5.tar.gz && \
