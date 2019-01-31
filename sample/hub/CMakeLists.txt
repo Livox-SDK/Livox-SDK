@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-set(DEMO_NAME hub_smaple)
+set(DEMO_NAME hub_sample)
 add_executable(${DEMO_NAME} main.c)
 target_link_libraries(${DEMO_NAME}
         PRIVATE
