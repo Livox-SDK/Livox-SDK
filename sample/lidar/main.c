@@ -24,7 +24,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 #include <string.h>
 #include "livox_sdk.h"
 
@@ -45,9 +49,9 @@ uint32_t data_recveive_count[kMaxLidarCount];
 
 #define BROADCAST_CODE_LIST_SIZE 3
 char *broadcast_code_list[BROADCAST_CODE_LIST_SIZE] = {
-    "00000000000002",
-    "00000000000003",
-    "00000000000004"
+    "000000000000002",
+    "000000000000003",
+    "000000000000004"
 };
 
 /** Receiving point cloud data from Livox LiDAR. */
@@ -183,7 +187,11 @@ int main(int argc, const char *argv[]) {
     return -1;
   }
 
+#ifdef WIN32
+  Sleep(30000);
+#else
   sleep(30);
+#endif
 
   int i = 0;
   for (i = 0; i < kMaxLidarCount; ++i) {

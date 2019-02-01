@@ -6,7 +6,7 @@ Livox SDK consists of Livox SDK communication protocol, Livox SDK core, Livox SD
 
 # Livox SDK Communication Protocol
 
-Livox SDK communication protocol opens to all users. It is the communication protocol between user programs and Livox products. The protocol consists of control commands and data format. Please refer to the [Livox SDK Communication Protocol](https://www.livoxtech.com/sdk/downloads) for detailed information.
+Livox SDK communication protocol opens to all users. It is the communication protocol between user programs and Livox products. The protocol consists of control commands and data format. Please refer to the [Livox SDK Communication Protocol](doc/Livox_SDK_Communication_Protocol_EN_20190117.pdf) for detailed information.
 
 # Livox SDK Core
 
@@ -20,7 +20,7 @@ The Livox LiDAR sensors can be connected to host directly or through the Livox H
 
 # Livox SDK API
 
-Livox SDK API provides a set of C style functions which can be conveniently integrated in C/C++ programs. Please refer to the [Livox SDK API Reference](https://www.livoxtech.com/sdk/downloads) for detailed information.
+Livox SDK API provides a set of C style functions which can be conveniently integrated in C/C++ programs. Please refer to the [Livox SDK API Reference](doc/Livox_LiDAR_SDK_API_Reference.pdf) for detailed information.
 
 ## Build Notes
 
@@ -28,9 +28,9 @@ Livox SDK API provides a set of C style functions which can be conveniently inte
 
 LivoxTech SDK requires cmake 3.0.0+, Apache Portable Runtime (APR) 1.61+ and Boost 1.54+.
 
-Here we use the Ubuntu 16.04 LTS system as an example to show you how to compile LivoxTech sdk's dependency libraries using apt or direct compiling the source code of apr and boost lib.
+Here we use the Ubuntu 16.04 LTS system and Windows 7,10 as an example to show you how to compile LivoxTech sdk's dependency libraries using apt or direct compiling the source code of apr and boost lib.
 
-###### Ubuntu 16.04 LTS
+##### Ubuntu 16.04 LTS
 
 The following package are required (feel free to cut and paste the apt-get command below):
 
@@ -58,7 +58,7 @@ tar zxf apr-1.6.5.tar.gz && \
 cd apr-1.6.5 && \
 ./configure --prefix=/usr && \
 make && \
-make install
+sudo make install
 ```
 
 ```
@@ -75,7 +75,7 @@ In the LivoxTech SDK directory (e.g. the checkout root or the archive unpack roo
 ```
 mkdir build && cd build && \
 cmake .. && \
-make -j $(nproc)
+make
 ```
 
 ###### Run the Project
@@ -92,32 +92,57 @@ cd sample\lidar && \
 ./lidar_sample
 ```
 
+##### Windows
+We test Livox SDK with Visual Studio 2015/2017 on Windows 7/10.
+
+###### Build with Vcpkg
+
+We recommend using [Vcpkg](https://github.com/Microsoft/vcpkg) to build our project. You need to install the following libraries first.
+
+```
+.\vcpkg install apr && \
+.\vcpkg install boost-atomic && \
+.\vcpkg install boost-system && \
+.\vcpkg install boost-thread && \
+.\vcpkg integrate install
+```
+
+In the LivoxTech SDK directory, run the following commands to create the Visual Studio solution file. Please replace vcpkgroot with your vcpkg installation location.
+
+```
+mkdir build && \
+cd build && \
+cmake .. "-DCMAKE_TOOLCHAIN_FILE=[vcpkgroot]\scripts\buildsystems\vcpkg.cmake"
+```
+
+Then you can open the livox_sdk.sln project in Visual Studio.
+
+###### Run the Project
+
+In the LivoxTech SDK directory, run the following commands to run the Hub or LiDAR sample:
+
+```
+cd build\sample\hub\Debug && \
+./hub_sample.exe
+```
+
+```
+cd build\sample\lidar\Debug && \
+./lidar_sample.exe
+```
+
 # Livox SDK Linux Sample
 
 Two samples are provided in Sample/Lidar and Sample/Hub, which demonstrate how to configure Livox LiDAR units and receive the point cloud data when directly connecting Livox-SDK to LiDAR units or by using a Livox Hub, respectively. The sequence diagram is shown as below: 
 
 ![sample](doc/images/sample.png)
 
-# Livox Ros Demo
-
-Livox ROS demo is an application software running under ROS environment. It supports point cloud display using rviz. The Livox ROS demo includes two software packages, which are applicable when the host is connected to LiDAR sensors directly or when a Livox Hub is in use, respectively. This Livox ROS demo supports Ubuntu 14.04/Ubuntu 16.04, both x86 and ARM. It has been tested on Intel i7 and Nvidia TX2. 
-
-## Livox ROS Demo User Guide
-
-The Livox-SDK-ROS directory is organized in the form of ROS workspace, and is fully compatible with ROS workspace. Only a subfolder named src can be found under the Livox-SDK-ROS directory. Inside the src directory, there are two ROS software packages: display_lidar_points and display_hub_points.
-
-1.	Download or clone the code from the Livox-SDK/Livox-SDK-ROS repository on GitHub. 
-2.	Compile the ROS code package under the Livox-SDK-ROS directory by typing the following command in terminal:
-  `catkin_make`
-3.	Run the compiled ROS nodes:
-  `rosrun display_lidar_points display_lidar_points_node`
-  or
-  `rosrun display_hub_points display_hub_points_node`
-4.	Open a new terminal, and run roscore under the Livox-SDK-ROS directory:
-  `roscore`
-5.	Open another new terminal, and run rviz under the Livox-SDK-ROS directory:
-  `rosrun rviz rviz`
-6.	Set ROS RVIZ:
-  1.	Create new visualization by display type, and select PointCloud;
-  2.	Set the Fixed Frame to “sensor_frame” in Global Options and set Frame Rate to 20;
-  3.	Select “/cloud” in Topic under the newly created PointCLoud.
+**NOTE**: Please replace the broadcast code lists in the `main.c` for both LiDAR sample and Hub sample with the broadcast code of your devices before running. You can find the following code section in `main.c`:
+```
+#define BROADCAST_CODE_LIST_SIZE 3
+char *broadcast_code_list[BROADCAST_CODE_LIST_SIZE] = {
+    "00000000000002",
+    "00000000000003",
+    "00000000000004"
+};
+```
