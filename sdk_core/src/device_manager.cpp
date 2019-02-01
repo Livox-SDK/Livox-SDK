@@ -172,6 +172,9 @@ bool DeviceManager::AddListeningDevice(const string &broadcast_code, DeviceMode 
       strncpy(ite->info.broadcast_code, broadcast_code.c_str(), sizeof(ite->info.broadcast_code));
       ite->info.handle = handle;
       return true;
+    } else if (strncmp(ite->info.broadcast_code, broadcast_code.c_str(), sizeof(ite->info.broadcast_code)) == 0) {
+      handle = ite->info.handle;
+      return true;
     }
   }
   return false;

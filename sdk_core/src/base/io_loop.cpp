@@ -39,8 +39,14 @@ bool IOLoop::Init() {
   if (mem_pool_ == NULL) {
     return false;
   }
+#ifdef WIN32
+  apr_status_t rv =
+      apr_pollset_create(&pollset_, kMaxPollCount, mem_pool_, APR_POLLSET_WAKEABLE);
+#else
   apr_status_t rv =
       apr_pollset_create(&pollset_, kMaxPollCount, mem_pool_, APR_POLLSET_THREADSAFE | APR_POLLSET_WAKEABLE);
+#endif
+
   if (rv != APR_SUCCESS) {
     LOG_ERROR << PrintAPRStatus(rv) << std::endl;
     return false;

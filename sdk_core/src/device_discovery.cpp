@@ -30,7 +30,11 @@
 #include <vector>
 #include "apr_network_io.h"
 #include "apr_pools.h"
+#ifdef WIN32
+#include "winsock.h"
+#else
 #include "arpa/inet.h"
+#endif
 #include "base/logging.h"
 #include "base/network_util.h"
 #include "command_handler/command_impl.h"
