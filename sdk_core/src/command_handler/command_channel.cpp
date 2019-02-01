@@ -234,7 +234,7 @@ void CommandChannel::Send(const Command &command) {
   commands_[command.packet.seq_num] = make_pair(command, apr_time_now() + apr_time_from_msec(command.time_out));
   Command &cmd = commands_[command.packet.seq_num].first;
   if (cmd.packet.data != NULL) {
-    delete cmd.packet.data;
+    delete[] cmd.packet.data;
     cmd.packet.data = NULL;
     cmd.packet.data_len = 0;
   }
