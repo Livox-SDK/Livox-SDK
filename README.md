@@ -40,16 +40,17 @@ In the Livox SDK directory, run the following commands to compile the project:
 cd build
 cmake ..
 make
+sudo make install
 ```
 ### 4.1.2 Windows 7/10
 #### Dependencies
 Livox SDK requires [CMake 3.0.0+](https://cmake.org/), [Apache Portable Runtime (APR) 1.61+](http://apr.apache.org/) and [Boost 1.54+](https://www.boost.org/) as dependencies.
 You can choose any C++ compiler to build the Livox SDK API. Here we use [Visual Studio 2015/2017](https://visualstudio.microsoft.com/) as an example, and [vcpkg](https://github.com/Microsoft/vcpkg) is recommend for building our project. The dependency libraries can be installed by:
 ```
-.\vcpkg install apr && \
-.\vcpkg install boost-atomic && \
-.\vcpkg install boost-system && \
-.\vcpkg install boost-thread && \
+.\vcpkg install apr
+.\vcpkg install boost-atomic
+.\vcpkg install boost-system
+.\vcpkg install boost-thread
 .\vcpkg integrate install
 ```
 Then, in the Livox SDK directory, run the following commands to create the Visual Studio solution file. Please replace [vcpkgroot] with your vcpkg installation path.
