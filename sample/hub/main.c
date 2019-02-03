@@ -24,7 +24,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 #include <string.h>
 #include "livox_sdk.h"
 
@@ -196,10 +200,18 @@ int main(int argc, const char *argv[]) {
   SetDeviceStateUpdateCallback(OnDeviceChange);
 
   if (Start()) {
+#ifdef WIN32
+    Sleep(20000);
+#else
     sleep(20);
+#endif
     HubStopSampling(OnStopSampleCallback, NULL);
     printf("stop sample\n");
+#ifdef WIN32
+    Sleep(10000);
+#else
     sleep(10);
+#endif
   }
 
   Uninit();
