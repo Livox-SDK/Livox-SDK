@@ -26,6 +26,10 @@
 #define LIVOX_NETWORK_UTIL_H_
 #include <apr_general.h>
 #include <apr_network_io.h>
+#ifdef WIN32
+#include <stdint.h>
+#endif
+
 
 namespace livox {
 namespace util {
