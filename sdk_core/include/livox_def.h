@@ -89,7 +89,18 @@ typedef enum {
 
 #pragma pack(1)
 
+#define LIVOX_SDK_MAJOR_VERSION       1
+#define LIVOX_SDK_MINOR_VERSION       0
+#define LIVOX_SDK_PATCH_VERSION       0
+
 #define kBroadcastCodeSize 16
+
+/** The numeric version information struct.  */
+typedef struct {
+  int major;      /**< major number */
+  int minor;      /**< minor number */
+  int patch;      /**< patch number */
+} LivoxSdkVersion;
 
 /** Cartesian coordinate format. */
 typedef struct {
@@ -99,7 +110,7 @@ typedef struct {
   uint8_t reflectivity; /**< Reflectivity */
 } LivoxRawPoint;
 
-/** standard point cloud format */
+/** Standard point cloud format */
 typedef struct {
   float x;              /**< X axis, Unit:m */
   float y;              /**< X axis, Unit:m */
