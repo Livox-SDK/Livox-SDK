@@ -78,7 +78,7 @@ bool FindLocalIP(const struct sockaddr_in &client_addr, uint32_t &local_ip) {
 
 	IP_ADAPTER_INFO *pAdapter = reinterpret_cast<IP_ADAPTER_INFO *>(pAdapterInfo.get());
 	if (NO_ERROR == dlRetVal && pAdapter != NULL) {
-		while (pAdapterInfo) {
+		while (pAdapter) {
 			std::string str_ip = pAdapter->IpAddressList.IpAddress.String;
 			std::string str_mask = pAdapter->IpAddressList.IpMask.String;
 			ULONG host_ip = inet_addr(const_cast<char *>(str_ip.c_str()));

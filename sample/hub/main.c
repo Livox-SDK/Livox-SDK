@@ -57,6 +57,10 @@ void GetLidarData(uint8_t handle, LivoxEthPacket *data, uint32_t data_num) {
     ++receive_packet_count;
     if (0 == (receive_packet_count % 10000)) {
       printf("receive packet count %d %d\n", data->id, receive_packet_count);
+
+	  /** Parsing the timestamp and the point cloud data. */
+	  uint64_t cur_timestamp = *((uint64_t *)(data->timestamp));
+	  LivoxRawPoint *p_point_data = (LivoxRawPoint *)data->data;
     }
     printf("receive packet from %d \n", (uint16_t) HubGetLidarHandle(data->slot, data->id));
   }
@@ -191,15 +195,24 @@ void OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
 }
 
 int main(int argc, const char *argv[]) {
+  printf("Livox SDK initializing.\n");
+  /** Initialize Livox-SDK. */
   if (!Init()) {
-    return -1;
+	return -1;
   }
+  printf("Livox SDK has been initialized.\n");
+
+  LivoxSdkVersion _sdkversion;
+  GetLivoxSdkVersion(&_sdkversion);
+  printf("Livox SDK version %d.%d.%d .\n", _sdkversion.major, _sdkversion.minor, _sdkversion.patch);
 
   memset(devices, 0, sizeof(devices));
   SetBroadcastCallback(OnDeviceBroadcast);
   SetDeviceStateUpdateCallback(OnDeviceChange);
 
   if (Start()) {
+	printf("Start discovering device.\n");
+
 #ifdef WIN32
     Sleep(20000);
 #else

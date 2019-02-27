@@ -1,7 +1,3 @@
-# Official Q&A site
-
-https://groups.google.com/forum/#!forum/livox-lidars
-
 # 1 Introduction
 
 Livox SDK is the software development kit designed for all Livox products. It is developed based on C/C++ following Livox SDK Communication Protocol, and provides easy-to-use C style API. With Livox SDK, users can quickly connect to Livox products and receive point cloud data. 
@@ -41,7 +37,8 @@ sudo apt install cmake libapr1-dev libboost-atomic-dev libboost-system-dev
 #### Compile Livox SDK
 In the Livox SDK directory, run the following commands to compile the project:
 ```
-cd build
+git clone https://github.com/Livox-SDK/Livox-SDK.git
+cd Livox-SDK/build
 cmake ..
 make
 sudo make install

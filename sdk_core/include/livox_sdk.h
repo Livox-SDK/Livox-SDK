@@ -34,6 +34,12 @@ extern "C" {
 #include "livox_def.h"
 
 /**
+* Return SDK's version information in a numeric form.
+* @param version Pointer to a version structure for returning the version information.
+*/
+void GetLivoxSdkVersion(LivoxSdkVersion *version);
+
+/**
  * Initialize the SDK.
  * @return true if successfully initialized, otherwise false.
  */
