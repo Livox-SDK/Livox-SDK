@@ -47,12 +47,13 @@ typedef struct {
 DeviceItem devices[kMaxLidarCount];
 uint32_t data_recveive_count[kMaxLidarCount];
 
-#define BROADCAST_CODE_LIST_SIZE 3
-char *broadcast_code_list[BROADCAST_CODE_LIST_SIZE] = {
-    "000000000000002",
-    "000000000000003",
-    "000000000000004"
+char *broadcast_code_list[] = {
+  "000000000000002",
+  "000000000000003",
+  "000000000000004"
 };
+
+#define BROADCAST_CODE_LIST_SIZE    (sizeof(broadcast_code_list) / sizeof(intptr_t))
 
 /** Receiving point cloud data from Livox LiDAR. */
 void GetLidarData(uint8_t handle, LivoxEthPacket *data, uint32_t data_num) {
@@ -60,6 +61,10 @@ void GetLidarData(uint8_t handle, LivoxEthPacket *data, uint32_t data_num) {
     data_recveive_count[handle] += data_num;
     if (data_recveive_count[handle] % 10000 == 0) {
       printf("receive packet count %d %d\n", handle, data_recveive_count[handle]);
+
+	  /** Parsing the timestamp and the point cloud data. */
+	  uint64_t cur_timestamp = *((uint64_t *)(data->timestamp));
+	  LivoxRawPoint *p_point_data = (LivoxRawPoint *)data->data;
     }
   }
 }
@@ -165,10 +170,16 @@ void OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
 }
 
 int main(int argc, const char *argv[]) {
+  printf("Livox SDK initializing.\n");
   /** Initialize Livox-SDK. */
   if (!Init()) {
     return -1;
   }
+  printf("Livox SDK has been initialized.\n");
+
+  LivoxSdkVersion _sdkversion;
+  GetLivoxSdkVersion(&_sdkversion);
+  printf("Livox SDK version %d.%d.%d .\n", _sdkversion.major, _sdkversion.minor, _sdkversion.patch);
 
   memset(devices, 0, sizeof(devices));
   memset(data_recveive_count, 0, sizeof(data_recveive_count));
@@ -186,6 +197,7 @@ int main(int argc, const char *argv[]) {
     Uninit();
     return -1;
   }
+  printf("Start discovering device.\n");
 
 #ifdef WIN32
   Sleep(30000);
