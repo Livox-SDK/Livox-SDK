@@ -30,6 +30,14 @@
 using namespace livox;
 IOThread *g_thread = NULL;
 
+void GetLivoxSdkVersion(LivoxSdkVersion *version) {
+  if (version != NULL) {
+    version->major = LIVOX_SDK_MAJOR_VERSION;
+    version->minor = LIVOX_SDK_MINOR_VERSION;
+    version->patch = LIVOX_SDK_PATCH_VERSION;
+  }
+}
+
 bool Init() {
   bool result = false;
   do {
@@ -59,7 +67,6 @@ bool Init() {
       result = false;
       break;
     }
-
     result = true;
   } while (0);
 
