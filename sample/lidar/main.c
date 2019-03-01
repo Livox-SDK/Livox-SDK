@@ -125,7 +125,7 @@ void OnDeviceChange(const DeviceInfo *info, DeviceEvent type) {
     printf("Device State error_code %d\n", devices[handle].info.status.status_code);
     printf("Device State working state %d\n", devices[handle].info.state);
     printf("Device feature %d\n", devices[handle].info.feature);
-    if (devices[handle].info.state == kLidarStateNormal && devices[handle].info.status.status_code == 0) {
+    if (devices[handle].info.state == kLidarStateNormal) {
       if (devices[handle].info.type == kDeviceTypeHub) {
         HubStartSampling(OnSampleCallback, NULL);
       } else {
