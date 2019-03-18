@@ -27,8 +27,8 @@ The Livox LiDAR sensors can be connected to host directly or through the Livox H
 Livox SDK API provides a set of C style functions which can be conveniently integrated in C/C++ programs. Please refer to the [Livox SDK API Reference](doc/Livox_LiDAR_SDK_API_Reference.pdf) for further information.
 
 ## 4.1 Installation
-The installation procedures in Ubuntu 16.04 LTS and Windows 7/10 are shown here as examples.
-### 4.1.1 Ubuntu 16.04 LTS
+The installation procedures in Ubuntu 16.04/14.04 LTS and Windows 7/10 are shown here as examples.
+### 4.1.1 Ubuntu 16.04/14.04 LTS
 #### Dependencies
 Livox SDK requires [CMake 3.0.0+](https://cmake.org/), [Apache Portable Runtime (APR) 1.61+](http://apr.apache.org/) and [Boost 1.54+](https://www.boost.org/) as dependencies. You can install these packages using apt:
 ```
@@ -79,14 +79,14 @@ The broadcast code consists of its serial number and an additional number (1,2, 
 ![sample](doc/images/broadcast_code.png)
 
 Again, steps for running the samples in Ubuntu 16.04 LTS and Windows 7/10 are shown here as examples.
-### 4.2.1 Ubuntu 16.04 LTS
-For Ubuntun 16.04 LTS, run the following commands to run the hub or lidar sample:
+### 4.2.1 Ubuntu 16.04 /14.04 LTS
+For Ubuntun 16.04/14.04 LTS, run the *lidar_sample* if connect with the LiDAR unit(s):
 ```
-cd sample\hub && ./hub_sample
+cd sample/lidar && ./lidar_sample
 ```
-or
+or run the *hub_sample* if connect with the hub unit(s):
 ```
-cd sample\lidar && ./lidar_sample
+cd sample/hub && ./hub_sample
 ```
 ### 4.2.2 Windows 7/10
 After compiling the Livox SDK as shown in section 4.1.2, you can find `hub_sample.exe` or `lidar_sample.exe` in the {Livox-SDK}\build\sample\hub\Debug or {Livox-SDK}\build\sample\lidar\Debug folder, respectively, which can be run directly. 
