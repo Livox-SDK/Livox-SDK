@@ -1,0 +1,4 @@
+var structfmt_1_1v5_1_1formatter_3_01_t_00_01_char_00_01typename_01std_1_1enable__if_3_01internal_1_a6b64300f4f7ee1d24250c7c28e1fdc2 =
+[
+    [ "format", "structfmt_1_1v5_1_1formatter_3_01_t_00_01_char_00_01typename_01std_1_1enable__if_3_01internal_1_a6b64300f4f7ee1d24250c7c28e1fdc2.html#a3038ada3d70528a9d5e3b6968f9cb079", null ]
+];

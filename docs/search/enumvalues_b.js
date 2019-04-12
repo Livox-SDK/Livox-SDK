@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['magenta',['magenta',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0a4c2a4a7078da0ac6733464eacfd00f86',1,'fmt::v5::magenta()'],['../namespacefmt_1_1v5.html#ab2f4feae8b2e17242b5f089a38e23fbaa4c2a4a7078da0ac6733464eacfd00f86',1,'fmt::v5::magenta()']]],
+  ['maroon',['maroon',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0a04a3da97880fcedeb087378f29c3a102',1,'fmt::v5']]],
+  ['max_5fpacked_5fargs',['max_packed_args',['../namespacefmt_1_1v5_1_1internal.html#ad553d3adb090e46cde2de286a928a8c9a9a0a8f1a6f42d5a0e96eadee1aaf4e3b',1,'fmt::v5::internal']]],
+  ['medium_5faquamarine',['medium_aquamarine',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0a3971b68e2b89dbe29871b9061dff0af9',1,'fmt::v5']]],
+  ['medium_5fblue',['medium_blue',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0a73bdd29aeb8e3e3274bbb71c30d70eb7',1,'fmt::v5']]],
+  ['medium_5forchid',['medium_orchid',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0adfcfa24e3022fb4b704f051d98ec0557',1,'fmt::v5']]],
+  ['medium_5fpurple',['medium_purple',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0a2a51478b9caafc3a28fef46a916cd92d',1,'fmt::v5']]],
+  ['medium_5fsea_5fgreen',['medium_sea_green',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0ac5aaf97240e28904c5b96eab2cbf753b',1,'fmt::v5']]],
+  ['medium_5fslate_5fblue',['medium_slate_blue',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0a996976a37b7f6296cc3cbf388ac91cee',1,'fmt::v5']]],
+  ['medium_5fspring_5fgreen',['medium_spring_green',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0a5157a28c83d98d39066c60c83a6983f8',1,'fmt::v5']]],
+  ['medium_5fturquoise',['medium_turquoise',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0a4db3022648c31d28b86ad95583d6c3c7',1,'fmt::v5']]],
+  ['medium_5fviolet_5fred',['medium_violet_red',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0ae8c7ad982a8c98a38c7e3381043b94d8',1,'fmt::v5']]],
+  ['midnight_5fblue',['midnight_blue',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0a83d1d60e0de07e8b1bf164247a77e28b',1,'fmt::v5']]],
+  ['mint_5fcream',['mint_cream',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0a28a62909f84c7a965ea755d99db1ca2b',1,'fmt::v5']]],
+  ['minus_5fflag',['MINUS_FLAG',['../namespacefmt_1_1v5.html#a2afc98455558e211af15ed1ad8c12bfaaaf7cf0b0f8341fafc6ab56b5c5c77f03',1,'fmt::v5']]],
+  ['misty_5frose',['misty_rose',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0a0552f51c284790d9d0f4b43ebfa9f2a8',1,'fmt::v5']]],
+  ['moccasin',['moccasin',['../namespacefmt_1_1v5.html#afcb360f8436b357c4d6f62a3fd73afc0adc8a6c38cc98a2c29859c34b26974bc7',1,'fmt::v5']]]
+];
