@@ -26,6 +26,7 @@
 #include "apr_general.h"
 #include "command_handler/command_handler.h"
 #include "data_handler/data_handler.h"
+#include "base/logging.h"
 #include "device_manager.h"
 using namespace livox;
 IOThread *g_thread = NULL;
@@ -41,6 +42,8 @@ void GetLivoxSdkVersion(LivoxSdkVersion *version) {
 bool Init() {
   bool result = false;
   do {
+    InitLogger();
+
     if (apr_initialize() != APR_SUCCESS) {
       result = false;
       break;
@@ -67,6 +70,7 @@ bool Init() {
       result = false;
       break;
     }
+
     result = true;
   } while (0);
 
@@ -94,6 +98,7 @@ void Uninit() {
     g_thread = NULL;
   }
 
+  UninitLogger();
   apr_terminate();
 }
 
@@ -102,4 +107,8 @@ bool Start() {
     return true;
   }
   return false;
+}
+
+void SaveLoggerFile() {
+  is_save_log_file = true;
 }

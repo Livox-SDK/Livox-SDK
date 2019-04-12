@@ -52,7 +52,7 @@ uint16_t DeviceDiscovery::port_count = 0;
 bool DeviceDiscovery::Init() {
   apr_status_t rv = apr_pool_create(&mem_pool_, NULL);
   if (rv != APR_SUCCESS) {
-    LOG_ERROR << PrintAPRStatus(rv) << std::endl;
+    LOG_ERROR(PrintAPRStatus(rv));
     return false;
   }
   if (comm_port_ == NULL) {
@@ -68,7 +68,7 @@ bool DeviceDiscovery::Start(IOLoop *loop) {
   loop_ = loop;
   sock_ = util::CreateBindSocket(kListenPort, mem_pool_);
   if (sock_ == NULL) {
-    LOG_ERROR << "DeviceDiscovery Create Socket Failed" << std::endl;
+    LOG_ERROR("DeviceDiscovery Create Socket Failed");
     return false;
   }
   loop_->AddDelegate(sock_, this);
@@ -84,7 +84,7 @@ void DeviceDiscovery::OnData(apr_socket_t *sock, void *) {
 
   comm_port_->UpdateCacheWrIdx(size);
   if (rv != APR_SUCCESS) {
-    LOG_ERROR << " Receive Failed " << PrintAPRStatus(rv) << std::endl;
+    LOG_ERROR(" Receive Failed {}", PrintAPRStatus(rv));
     return;
   }
   CommPacket packet;
@@ -107,14 +107,13 @@ void DeviceDiscovery::OnData(apr_socket_t *sock, void *) {
         continue;
       }
       if (*(uint8_t *)packet.data == 0) {
-        LOG_INFO << "New Device " << std::endl;
-        LOG_INFO << "Handle: " << static_cast<uint16_t>(info.handle) << std::endl;
-        LOG_INFO << "Broadcast Code: " << info.broadcast_code << std::endl;
-        LOG_INFO << "Type: " << info.type << std::endl;
-        LOG_INFO << "IP: " << info.ip << std::endl;
-        LOG_INFO << "Command Port: " << info.cmd_port << std::endl;
-        LOG_INFO << "Data Port: " << info.data_port << std::endl;
-        LOG_INFO << std::endl;
+        LOG_INFO("New Device");
+        LOG_INFO("Handle: {}", static_cast<uint16_t>(info.handle));
+        LOG_INFO("Broadcast Code: {}", info.broadcast_code);
+        LOG_INFO("Type: {}", info.type);
+        LOG_INFO("IP: {}", info.ip);
+        LOG_INFO("Command Port: {}", info.cmd_port);
+        LOG_INFO("Data Port: {}", info.data_port);
         DeviceFound(info);
       }
     }
@@ -159,7 +158,7 @@ void DeviceDiscovery::OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr
 
   BroadcastDeviceInfo *device_info = (BroadcastDeviceInfo *)packet.data;
   string broadcast_code = device_info->broadcast_code;
-  //LOG_INFO << " Boradcast broadcast code: " << broadcast_code << std::endl;
+  LOG_INFO(" Boradcast broadcast code: {}", broadcast_code);
   device_manager().BroadcastDevices(device_info);
   DeviceInfo lidar_info;
   bool found = device_manager().FindDevice(broadcast_code, lidar_info);
@@ -180,14 +179,14 @@ void DeviceDiscovery::OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr
   memset(&ip, 0, sizeof(ip));
   apr_status_t rv = apr_sockaddr_ip_getbuf(ip, sizeof(ip), addr);
   if (rv != APR_SUCCESS) {
-    LOG_ERROR << PrintAPRStatus(rv) << std::endl;
+    LOG_ERROR(PrintAPRStatus(rv));
     return;
   }
   strncpy(lidar_info.ip, ip, sizeof(lidar_info.ip));
   apr_pool_t *pool = NULL;
   rv = apr_pool_create(&pool, mem_pool_);
   if (rv != APR_SUCCESS) {
-    LOG_ERROR << PrintAPRStatus(rv) << std::endl;
+    LOG_ERROR(PrintAPRStatus(rv));
     return;
   }
 

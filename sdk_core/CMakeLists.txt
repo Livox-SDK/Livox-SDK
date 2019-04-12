@@ -16,7 +16,7 @@ endif (WIN32)
 
 if (APR_FOUND)
     target_include_directories(${SDK_LIBRARY}
-            PRIVATE
+            PUBLIC
             ${APR_INCLUDE_DIRS})
     target_link_libraries(${SDK_LIBRARY}
             PUBLIC
@@ -35,6 +35,7 @@ target_include_directories(${SDK_LIBRARY}
         PUBLIC
         include
         include/third_party/FastCRC
+        include/third_party/spdlog
         PRIVATE
         src)
 
@@ -58,6 +59,7 @@ target_sources(${SDK_LIBRARY}
         src/base/network_util.h
         src/base/network_util.cpp
         src/base/logging.h
+        src/base/logging.cpp
         src/base/noncopyable.h
         src/base/util.cpp
         src/livox_sdk.cpp
@@ -90,5 +92,3 @@ install(TARGETS ${SDK_LIBRARY}
         PUBLIC_HEADER DESTINATION include
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib)
-
-

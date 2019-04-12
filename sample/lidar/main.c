@@ -30,6 +30,8 @@
 #include <unistd.h>
 #endif
 #include <string.h>
+#include <apr_general.h>
+#include <apr_getopt.h>
 #include "livox_sdk.h"
 
 typedef enum {
@@ -47,13 +49,18 @@ typedef struct {
 DeviceItem devices[kMaxLidarCount];
 uint32_t data_recveive_count[kMaxLidarCount];
 
-char *broadcast_code_list[] = {
+/** Connect all the broadcast device. */
+int lidar_count = 0;
+char broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize];
+
+/** Connect the broadcast device in list, please input the broadcast code and modify the BROADCAST_CODE_LIST_SIZE. */
+/*#define BROADCAST_CODE_LIST_SIZE  3
+int lidar_count = BROADCAST_CODE_LIST_SIZE;
+char broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize] = {
   "000000000000002",
   "000000000000003",
   "000000000000004"
-};
-
-#define BROADCAST_CODE_LIST_SIZE    (sizeof(broadcast_code_list) / sizeof(intptr_t))
+};*/
 
 /** Receiving point cloud data from Livox LiDAR. */
 void GetLidarData(uint8_t handle, LivoxEthPacket *data, uint32_t data_num) {
@@ -145,17 +152,19 @@ void OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
   }
 
   printf("Receive Broadcast Code %s\n", info->broadcast_code);
-  bool found = false;
 
-  int i = 0;
-  for (i = 0; i < BROADCAST_CODE_LIST_SIZE; ++i) {
-    if (strncmp(info->broadcast_code, broadcast_code_list[i], kBroadcastCodeSize) == 0) {
-      found = true;
-      break;
+  if (lidar_count > 0) {
+    bool found = false;
+    int i = 0;
+    for (i = 0; i < lidar_count; ++i) {
+      if (strncmp(info->broadcast_code, broadcast_code_list[i], kBroadcastCodeSize) == 0) {
+        found = true;
+        break;
+      }
     }
-  }
-  if (!found) {
-    return;
+    if (!found) {
+      return;
+    }
   }
 
   bool result = false;
@@ -169,9 +178,84 @@ void OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
   }
 }
 
+/** Set the program options.
+* You can input the registered device broadcast code and decide whether to save the log file.
+*/
+int SetProgramOption(int argc, const char *argv[]) {
+  apr_status_t rv;
+  apr_pool_t *mp = NULL;
+  static const apr_getopt_option_t opt_option[] = {
+    /** Long-option, short-option, has-arg flag, description */
+    { "code", 'c', 1, "Register device broadcast code" },     
+    { "log", 'l', 0, "Save the log file" },    
+    { "help", 'h', 0, "Show help" },    
+    { NULL, 0, 0, NULL },
+  };
+  apr_getopt_t *opt = NULL;
+  int optch = 0;
+  const char *optarg = NULL;
+
+  apr_initialize();
+  apr_pool_create(&mp, NULL);
+  rv = apr_getopt_init(&opt, mp, argc, argv);
+  if (rv != APR_SUCCESS) {
+    printf("Program options initialization failed.\n");
+    return -1;
+  }
+
+  /** Parse the all options based on opt_option[] */
+  bool is_help = false;
+  while ((rv = apr_getopt_long(opt, opt_option, &optch, &optarg)) == APR_SUCCESS) {
+    switch (optch) {
+    case 'c':
+      printf("Register broadcast code: %s\n", optarg);
+      char *sn_list = (char *)malloc(sizeof(char)*(strlen(optarg) + 1));
+      strncpy(sn_list, optarg, sizeof(char)*(strlen(optarg) + 1));
+      char *sn_list_head = sn_list;
+      sn_list = strtok(sn_list, "&");
+      int i = 0;
+      while (sn_list) {
+        strncpy(broadcast_code_list[i], sn_list, kBroadcastCodeSize);
+        sn_list = strtok(NULL, "&");
+        i++;
+      }
+      lidar_count = i;
+      free(sn_list_head);
+      sn_list_head = NULL;
+      break;
+    case 'l':
+      printf("Save the log file.\n");
+      SaveLoggerFile();
+      break;
+    case 'h':
+      printf(
+        " [-c] Register device broadcast code\n"
+        " [-l] Save the log file\n"
+        " [-h] Show help\n"
+      );
+      is_help = true;
+      break;
+    }
+  }
+  if (rv != APR_EOF) {
+    printf("Invalid options.\n");
+  }
+
+  apr_pool_destroy(mp);
+  mp = NULL;
+  apr_terminate();
+  if (is_help)
+    return 1;
+  return 0;
+}
+
 int main(int argc, const char *argv[]) {
+/** Set the program options. */
+  if (SetProgramOption(argc, argv))
+    return 0;
+
   printf("Livox SDK initializing.\n");
-  /** Initialize Livox-SDK. */
+/** Initialize Livox-SDK. */
   if (!Init()) {
     return -1;
   }

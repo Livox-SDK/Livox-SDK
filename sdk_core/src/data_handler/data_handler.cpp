@@ -38,10 +38,6 @@ DataHandler &data_handler() {
   return handler;
 }
 
-#pragma pack(1)
-
-#pragma pack()
-
 bool DataHandler::AddDataListener(uint8_t handle, const DataCallback &cb) {
   if (handle >= callbacks_.size()) {
     return false;
@@ -102,15 +98,15 @@ void DataHandler::OnDataCallback(uint8_t handle, void *data, uint16_t size) {
     return;
   }
   if (cb) {
-    //    LOG_INFO << " device_sn: " <<  device_sn << std::endl;
-    //    LOG_INFO << " version: " << (uint32_t) lidar_data_cb->version << std::endl;
-    //    LOG_INFO << " slot: " << (uint32_t) lidar_data_cb->slot << std::endl;
-    //    LOG_INFO << " resverd : " << (uint32_t) lidar_data_cb->reserved << std::endl;
-    //    LOG_INFO << " errorCode: " << (uint32_t) lidar_data_cb->err_code << std::endl;
-    //    LOG_INFO << " lidarID: " << (uint16_t) lidar_data_cb->id << std::endl;
-    //    LOG_INFO << " timeStampType: " << (uint32_t) (lidar_data_cb->timestamp_type) << std::endl;
-    //    LOG_INFO << " timeStamp: " << (uint32_t) *(lidar_data_cb->time_stamp) << std::endl;
-    //    LOG_INFO << " dataType: " << (uint16_t) lidar_data->data_type << std::endl << std::endl;
+    //LOG_INFO(" device_sn: {}",  device_sn);
+    //LOG_INFO(" version: {}", (uint32_t)lidar_data->version);
+    //LOG_INFO(" slot: {}", (uint32_t)lidar_data->slot);
+    //LOG_INFO(" resverd : {}", (uint32_t)lidar_data->reserved);
+    //LOG_INFO(" errorCode: {}", (uint32_t)lidar_data->err_code);
+    //LOG_INFO(" lidarID: {}", (uint16_t)lidar_data->id);
+    //LOG_INFO(" timeStampType: {}", (uint32_t) (lidar_data->timestamp_type));
+    //LOG_INFO(" timeStamp: {}", (uint32_t) *(lidar_data->time_stamp));
+    //LOG_INFO(" dataType: {}", (uint16_t) lidar_data->data_type);
     cb(handle, lidar_data, size);
   }
 }
