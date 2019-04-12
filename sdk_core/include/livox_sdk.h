@@ -57,6 +57,11 @@ bool Start();
 void Uninit();
 
 /**
+* Save the log file.
+*/
+void SaveLoggerFile();
+
+/**
  * @c SetBroadcastCallback response callback function.
  * @param info information of the broadcast device, becomes invalid after the function returns.
  */

@@ -78,7 +78,7 @@ void CommandChannel::OnData(apr_socket_t *, void *) {
   apr_status_t rv = apr_socket_recvfrom(&addr, sock_, 0, reinterpret_cast<char *>(cache_buf), &size);
   comm_port_->UpdateCacheWrIdx(size);
   if (rv != APR_SUCCESS) {
-    LOG_ERROR << PrintAPRStatus(rv) << std::endl;
+    LOG_ERROR(PrintAPRStatus(rv));
     return;
   }
 
@@ -132,8 +132,8 @@ void CommandChannel::OnTimer(apr_time_t now) {
   }
 
   for (list<Command>::iterator ite = timeout_commands.begin(); ite != timeout_commands.end(); ++ite) {
-    LOG_WARN << PrintAPRTime(apr_time_now()) << " Command Timeout: Set " << (uint16_t)ite->packet.cmd_set << " Id "
-             << ite->packet.cmd_code << " Seq " << ite->packet.seq_num << std::endl;
+    LOG_WARN("Apr time now: {}, Command Timeout: Set {}, Id {}, Seq {}", PrintAPRTime(apr_time_now()), 
+        (uint16_t)ite->packet.cmd_set, ite->packet.cmd_code, ite->packet.seq_num);
     if (callback_) {
       ite->packet.packet_type = kCommandTypeAck;
       callback_->OnCommand(handle_, *ite);
@@ -230,6 +230,7 @@ void CommandChannel::DeviceDisconnect(uint8_t handle) {
 }
 
 void CommandChannel::Send(const Command &command) {
+  LOG_INFO(" Send Command: Set {} Id {} Seq {}", (uint16_t)command.packet.cmd_set, command.packet.cmd_code, command.packet.seq_num);
   SendInternal(command);
   commands_[command.packet.seq_num] = make_pair(command, apr_time_now() + apr_time_from_msec(command.time_out));
   Command &cmd = commands_[command.packet.seq_num].first;

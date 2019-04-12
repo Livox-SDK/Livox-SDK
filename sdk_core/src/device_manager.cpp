@@ -96,6 +96,7 @@ void DeviceManager::RemoveDevice(uint8_t handle) {
   if (handle < devices_.size()) {
     devices_[handle].connected = false;
   }
+  LOG_INFO(" Device {} removed ", (uint16_t)handle);
 }
 
 void DeviceManager::BroadcastDevices(const BroadcastDeviceInfo *info) {
@@ -110,7 +111,7 @@ void DeviceManager::UpdateDevices(const DeviceInfo &device, DeviceEvent type) {
   }
 
   if ((device_mode_ == kDeviceModeHub) && (type == kEventConnect)) {
-    LOG_DEBUG << "Send Query lidars command" << std::endl;
+    LOG_DEBUG("Send Query lidars command");
     command_handler().SendCommand(kHubDefaultHandle,
                                   kCommandSetHub,
                                   kCommandIDHubQueryLidarInformation,
@@ -140,7 +141,7 @@ void DeviceManager::HubLidarInfomationCallback(uint8_t status, uint8_t, HubQuery
       connected_cb_(&(devices_[kHubDefaultHandle].info), kEventConnect);
     }
   } else {
-    LOG_ERROR << "Failed to query lidars information connected to hub." << std::endl;
+    LOG_ERROR("Failed to query lidars information connected to hub.");
   }
 }
 
@@ -214,19 +215,21 @@ void DeviceManager::UpdateDeviceState(uint8_t handle, const HeartbeatResponse &r
     return;
   }
 
-  //  LOG_INFO << " Update State " << (uint16_t) response.state << " connect " << devices_[handle].connected <<
-  //  std::endl;
+  //LOG_INFO(" Update State {}, connect {}", (uint16_t)response.state, devices_[handle].connected);
   bool update = false;
   DeviceInfo &info = devices_[handle].info;
   if (info.state != response.state) {
+    LOG_INFO(" Update State to {}, device connect {}", (uint16_t)response.state, devices_[handle].connected);
     info.state = static_cast<LidarState>(response.state);
     update = true;
   }
   if (info.feature != response.feature) {
+    LOG_INFO(" Update feature to {}, device connect {}", (uint16_t)response.feature, devices_[handle].connected);
     info.feature = static_cast<LidarFeature>(response.feature);
     update = true;
   }
   if (info.status.progress != response.error_union.progress) {
+    LOG_INFO(" Update progress {}, device connect {}", (uint16_t)response.error_union.progress, devices_[handle].connected);
     info.status.progress = response.error_union.progress;
     update = true;
   }

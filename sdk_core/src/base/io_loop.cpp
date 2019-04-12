@@ -48,7 +48,7 @@ bool IOLoop::Init() {
 #endif
 
   if (rv != APR_SUCCESS) {
-    LOG_ERROR << PrintAPRStatus(rv) << std::endl;
+    LOG_ERROR(PrintAPRStatus(rv));
     return false;
   }
 
@@ -141,14 +141,14 @@ void IOLoop::Loop() {
   }
 
   if (rv != APR_SUCCESS && !APR_STATUS_IS_TIMEUP(rv) && !APR_STATUS_IS_EINTR(rv)) {
-    LOG_ERROR << PrintAPRStatus(rv) << std::endl;
+    LOG_ERROR(PrintAPRStatus(rv));
   }
 }
 
 bool IOLoop::Wakeup() {
   apr_status_t rv = apr_pollset_wakeup(pollset_);
   if (rv != APR_SUCCESS) {
-    LOG_ERROR << PrintAPRStatus(rv) << std::endl;
+    LOG_ERROR(PrintAPRStatus(rv));
     return false;
   }
   return true;

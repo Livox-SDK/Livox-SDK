@@ -25,6 +25,7 @@
 #include "command_handler.h"
 #include <boost/thread/lock_guard.hpp>
 #include <boost/thread/locks.hpp>
+#include "base/logging.h"
 #include "command_impl.h"
 #include "device_manager.h"
 #include "hub_command_handler.h"
@@ -100,8 +101,10 @@ void CommandHandler::Uninit() {
 
 void CommandHandler::OnCommand(uint8_t handle, const Command &command) {
   if (command.packet.packet_type == kCommandTypeAck) {
+    LOG_INFO(" Recieve Ack: Set {} Id {} Seq {}", (uint16_t)command.packet.cmd_set, command.packet.cmd_code, command.packet.seq_num);
     OnCommandAck(handle, command);
   } else if (command.packet.packet_type == kCommandTypeMsg) {
+    LOG_INFO(" Recieve Message: Set {} Id {} Seq {}", (uint16_t)command.packet.cmd_set, command.packet.cmd_code, command.packet.seq_num);
     OnCommandMsg(handle, command);
   }
 }

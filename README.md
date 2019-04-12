@@ -7,6 +7,7 @@ Livox SDK consists of Livox SDK communication protocol, Livox SDK core, Livox SD
 ## Prerequisites
 * Ubuntu 14.04/Ubuntu 16.04, both x86 and ARM (Nvidia TX2)
 * Windows 7/10, Visual Studio 2015/2017
+* C++11 compiler
 
 # 2 Livox SDK Communication Protocol
 
@@ -46,6 +47,7 @@ sudo make install
 ### 4.1.2 Windows 7/10
 #### Dependencies
 Livox SDK supports Visual Studio 2015/2017 and requires [CMake 3.0.0+](https://cmake.org/), [Apache Portable Runtime (APR) 1.61+](http://apr.apache.org/) and [Boost 1.54+](https://www.boost.org/) as dependencies. [vcpkg](https://github.com/Microsoft/vcpkg) is recommended for building the dependency libraries as follows:
+For the 32-bit project:
 ```
 .\vcpkg install apr
 .\vcpkg install boost-atomic
@@ -53,10 +55,24 @@ Livox SDK supports Visual Studio 2015/2017 and requires [CMake 3.0.0+](https://c
 .\vcpkg install boost-thread
 .\vcpkg integrate install
 ```
+For the 64-bit project:
+```
+.\vcpkg install apr:x64-windows
+.\vcpkg install boost-atomic:x64-windows
+.\vcpkg install boost-system:x64-windows
+.\vcpkg install boost-thread:x64-windows
+.\vcpkg integrate install
+```
 Then, in the Livox SDK directory, run the following commands to create the Visual Studio solution file. Please replace [vcpkgroot] with your vcpkg installation path.
+Generate the 32-bit project:
 ```
 cd build && \
 cmake .. "-DCMAKE_TOOLCHAIN_FILE=[vcpkgroot]\scripts\buildsystems\vcpkg.cmake"
+```
+Generate the 64-bit project:
+```
+cd build && \
+cmake .. -G "Visual Studio 15 2017 Win64" "-DCMAKE_TOOLCHAIN_FILE=[vcpkgroot]\scripts\buildsystems\vcpkg.cmake"
 ```
 #### Compile Livox SDK
 You can now compile the Livox SDK in Visual Studio.
@@ -65,14 +81,22 @@ Two samples are provided in Sample/Lidar and Sample/Hub, which demonstrate how t
 
 ![sample](doc/images/sample.png)
 
-**NOTE**: Please replace the broadcast code lists in the `main.c` for both LiDAR sample ({Livox-SDK}/sample/lidar/main.c) and Hub sample ({Livox-SDK}/sample/hub/main.c) with the broadcast code of your devices before building. The corresponding code section in `main.c` is as follows:
+**NOTE**: We will connect all the broadcast device in default. You can also use program options in `4.2.3 Program Options` to connect specific device by the broadcast code. Or you can input the broadcast code list in sample. If you choose this way, please comment the following code section:
 ```
-#define BROADCAST_CODE_LIST_SIZE 3
-char *broadcast_code_list[BROADCAST_CODE_LIST_SIZE] = {
-    "00000000000002",
-    "00000000000003",
-    "00000000000004"
-};
+/** Connect all the broadcast device. */
+int lidar_count = 0;
+char broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize];
+```
+Remove the comment of the following code section, set the BROADCAST_CODE_LIST_SIZE and replace the broadcast code lists in the `main.c` for both LiDAR sample ({Livox-SDK}/sample/lidar/main.c) and Hub sample ({Livox-SDK}/sample/hub/main.c) with the broadcast code of your devices before building.
+```
+/** Connect the broadcast device in list, please input the broadcast code and modify the BROADCAST_CODE_LIST_SIZE. */
+/*#define BROADCAST_CODE_LIST_SIZE  3
+int lidar_count = BROADCAST_CODE_LIST_SIZE;
+char broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize] = {
+  "000000000000002",
+  "000000000000003",
+  "000000000000004"
+};*/
 ```
 The broadcast code consists of its serial number and an additional number (1,2, or 3). The serial number can be found on the body of the LiDAR unit (below the QR code). The detailed format is shown as below:
 
@@ -90,6 +114,23 @@ cd sample/hub && ./hub_sample
 ```
 ### 4.2.2 Windows 7/10
 After compiling the Livox SDK as shown in section 4.1.2, you can find `hub_sample.exe` or `lidar_sample.exe` in the {Livox-SDK}\build\sample\hub\Debug or {Livox-SDK}\build\sample\lidar\Debug folder, respectively, which can be run directly. 
+
+Then you can see the information as below:
+
+![sample](doc/images/sdk_init.png)
+
+### 4.2.3 Program Options
+We provide the following program options for the broadcast code and log file:
+```
+[-c]:Register device broadcast code.
+[-l]:Save the log file(In the executable file's directory).
+[-h]:Show help.
+```
+Here is the example:
+```
+./lidar_sample -c "00000000000002&00000000000003&00000000000004" -l
+./hub_sample -c "00000000000001" -l
+```
 
 # 5 Support
 You can get support from Livox with the following methods:
