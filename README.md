@@ -11,13 +11,13 @@ Livox SDK consists of Livox SDK communication protocol, Livox SDK core, Livox SD
 
 # 2 Livox SDK Communication Protocol
 
-Livox SDK communication protocol opens to all users. It is the communication protocol between user programs and Livox products. The protocol consists of control commands and data format. Please refer to the [Livox SDK Communication Protocol](doc/Livox_SDK_Communication_Protocol_EN_20190117.pdf) for detailed information.
+Livox SDK communication protocol opens to all users. It is the communication protocol between user programs and Livox products. The protocol consists of control commands and data format. Please refer to the [Livox SDK Communication Protocol](<https://github.com/Livox-SDK/Livox-SDK/wiki/Livox-SDK-Communication-Protocol>) for detailed information.
 
 # 3 Livox SDK Core
 
 Livox SDK provides the implementation of control commands and point cloud data transmission, as well as the C/C++ API. The basic structure of Livox SDK core is shown as below:
 
-![sdk](doc/images/sdk.png)
+![Livox SDK Architecture](doc/images/sdk.png)
 
 User Datagram Protocol (UDP) is used for communication between Livox SDK and LiDAR sensors. Please refer to the Livox SDK Communication Protocol for further information. Point cloud data handler supports point cloud data transmission, while command handler receives and sends control commands. And the C/C++ API is based on command handler and point cloud data handler.
 
@@ -25,7 +25,7 @@ The Livox LiDAR sensors can be connected to host directly or through the Livox H
 
 # 4 Livox SDK API
 
-Livox SDK API provides a set of C style functions which can be conveniently integrated in C/C++ programs. Please refer to the [Livox SDK API Reference](doc/Livox_LiDAR_SDK_API_Reference.pdf) for further information.
+Livox SDK API provides a set of C style functions which can be conveniently integrated in C/C++ programs. Please refer to the [Livox SDK API Reference](https://livox-sdk.github.io/Livox-SDK/) for further information.
 
 ## 4.1 Installation
 The installation procedures in Ubuntu 16.04/14.04 LTS and Windows 7/10 are shown here as examples.
@@ -79,30 +79,8 @@ You can now compile the Livox SDK in Visual Studio.
 ## 4.2 Run Livox SDK Sample
 Two samples are provided in Sample/Lidar and Sample/Hub, which demonstrate how to configure Livox LiDAR units and receive the point cloud data when directly connecting Livox SDK to LiDAR units or by using a Livox Hub, respectively. The sequence diagram is shown as below: 
 
-![sample](doc/images/sample.png)
+![](doc/images/sample.png)
 
-**NOTE**: We will connect all the broadcast device in default. You can also use program options in `4.2.3 Program Options` to connect specific device by the broadcast code. Or you can input the broadcast code list in sample. If you choose this way, please comment the following code section:
-```
-/** Connect all the broadcast device. */
-int lidar_count = 0;
-char broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize];
-```
-Remove the comment of the following code section, set the BROADCAST_CODE_LIST_SIZE and replace the broadcast code lists in the `main.c` for both LiDAR sample ({Livox-SDK}/sample/lidar/main.c) and Hub sample ({Livox-SDK}/sample/hub/main.c) with the broadcast code of your devices before building.
-```
-/** Connect the broadcast device in list, please input the broadcast code and modify the BROADCAST_CODE_LIST_SIZE. */
-/*#define BROADCAST_CODE_LIST_SIZE  3
-int lidar_count = BROADCAST_CODE_LIST_SIZE;
-char broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize] = {
-  "000000000000002",
-  "000000000000003",
-  "000000000000004"
-};*/
-```
-The broadcast code consists of its serial number and an additional number (1,2, or 3). The serial number can be found on the body of the LiDAR unit (below the QR code). The detailed format is shown as below:
-
-![sample](doc/images/broadcast_code.png)
-
-Again, steps for running the samples in Ubuntu 16.04 LTS and Windows 7/10 are shown here as examples.
 ### 4.2.1 Ubuntu 16.04 /14.04 LTS
 For Ubuntun 16.04/14.04 LTS, run the *lidar_sample* if connect with the LiDAR unit(s):
 ```
@@ -117,12 +95,27 @@ After compiling the Livox SDK as shown in section 4.1.2, you can find `hub_sampl
 
 Then you can see the information as below:
 
-![sample](doc/images/sdk_init.png)
+![](doc/images/sdk_init.png)
 
-### 4.2.3 Program Options
-We provide the following program options for the broadcast code and log file:
+### 4.3 Connect to the specific LiDAR units
+
+Samples we provided will connect all the broadcast device in you LAN in default.There are two ways to connect the specific units: 
+
+* run sample with input options 
+
+* edit the Broadcast Code list in source code
+
+**NOTE:**
+
+Each Livox LiDAR unit owns a unique Broadcast Code . The broadcast code consists of its serial number and an additional number (1,2, or 3). The serial number can be found on the body of the LiDAR unit (below the QR code).The Broadcast Code may be used when you want to connect to the specific LiDAR unit(s).  The detailed format is shown as below:
+
+![Broadcast Code](doc/images/broadcast_code.png)
+
+#### 4.3.1 Program Options
+
+We provide the following program options for connecting the specific units and saving log file:
 ```
-[-c]:Register device broadcast code.
+[-c]:Register LiDAR units by Broadcast Code. Connect the registered units ONLY. 
 [-l]:Save the log file(In the executable file's directory).
 [-h]:Show help.
 ```
@@ -132,7 +125,48 @@ Here is the example:
 ./hub_sample -c "00000000000001" -l
 ```
 
+#### 4.3.2 Edit Broadcast Code List
+
+ Comment the following code section:
+
+```
+/** Connect all the broadcast device. */
+int lidar_count = 0;
+char broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize];
+```
+
+Remove the comment of the following code section, set the BROADCAST_CODE_LIST_SIZE and replace the broadcast code lists in the `main.c` for both LiDAR sample ({Livox-SDK}/sample/lidar/main.c) and Hub sample ({Livox-SDK}/sample/hub/main.c) with the broadcast code of your devices before building.
+
+```
+/** Connect the broadcast device in list, please input the broadcast code and modify the BROADCAST_CODE_LIST_SIZE. */
+/*#define BROADCAST_CODE_LIST_SIZE  3
+int lidar_count = BROADCAST_CODE_LIST_SIZE;
+char broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize] = {
+  "000000000000002",
+  "000000000000003",
+  "000000000000004"
+};*/
+```
+
+### 4.4 Generate the lvx file
+
+We provide the C++ sample to generate the lvx file for hub and LiDAR unit(s). You can use the same way in `4.2.1` and `4.2.2` to run them.
+
+#### 4.4.1 Program Options
+
+You can alse use the program options in `4.3.1` to connect specific device and generate the log file, and we provide two new options for lvx file:
+```
+[-t] Time to save point cloud to the lvx file.(unit: s)
+[-p] Get the extrinsic parameter from standard extrinsic.xml file(The same as viewer) in the executable file's directory.(Especially for LiDAR unit(s) as the hub will calculate the extrinsic parameter by itself)
+```
+Here is the example:
+```
+./lidar_lvx_sample -c "00000000000002&00000000000003&00000000000004" -l -t 10 -p
+./hub_lvx_sample -c "00000000000001" -l -t 10
+```
+
 # 5 Support
+
 You can get support from Livox with the following methods:
 * Send email to dev@livoxtech.com with a clear description of your problem and your setup
 * Github Issues

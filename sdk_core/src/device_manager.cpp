@@ -214,8 +214,6 @@ void DeviceManager::UpdateDeviceState(uint8_t handle, const HeartbeatResponse &r
   if (handle >= devices_.size()) {
     return;
   }
-
-  //LOG_INFO(" Update State {}, connect {}", (uint16_t)response.state, devices_[handle].connected);
   bool update = false;
   DeviceInfo &info = devices_[handle].info;
   if (info.state != response.state) {

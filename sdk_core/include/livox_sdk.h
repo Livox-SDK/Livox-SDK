@@ -146,18 +146,21 @@ uint8_t QueryDeviceInformation(uint8_t handle, DeviceInformationCallback cb, voi
 
 /**
  * Callback function for receiving point cloud data.
- * @param handle   device handle.
- * @param data     device's data.
- * @param data_num number of points in data.
+ * @param handle      device handle.
+ * @param data        device's data.
+ * @param data_num    number of points in data.
+ * @param client_data user data associated with the command.
  */
-typedef void (*DataCallback)(uint8_t handle, LivoxEthPacket *data, uint32_t data_num);
+typedef void (*DataCallback)(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data);
 
 /**
  * Set the callback to receive point cloud data. Only one callback is supported for a specific device. Set the point
  * cloud data callback before beginning sampling.
+ * @param handle      device handle.
  * @param cb callback to receive point cloud data.
+ * @param client_data user data associated with the command.
  */
-void SetDataCallback(uint8_t handle, DataCallback cb);
+void SetDataCallback(uint8_t handle, DataCallback cb, void *client_data);
 
 /**
  * Function type of callback with 1 byte of response.
@@ -371,16 +374,11 @@ typedef void (*HubGetExtrinsicParameterCallback)(uint8_t status,
 
 /**
  * Get extrinsic parameters of LiDAR units connected to the Livox Hub.
- * @param  req           the LiDAR units broadcast code list.
- * @param  length        the request's length.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
  * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
  */
-uint8_t HubGetExtrinsicParameter(HubGetExtrinsicParameterRequest *req,
-                                 uint16_t length,
-                                 HubGetExtrinsicParameterCallback cb,
-                                 void *client_data);
+uint8_t HubGetExtrinsicParameter(HubGetExtrinsicParameterCallback cb, void *client_data);
 
 /**
  * Turn on or off the calculation of extrinsic parameters.
@@ -417,6 +415,24 @@ uint8_t HubRainFogSuppress(HubRainFogSuppressRequest *req,
                            uint16_t length,
                            HubRainFogSuppressCallback cb,
                            void *client_data);
+
+/**
+* @c HubQuerySlotPowerStatus response callback function.
+* @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref ResponseStatus for other
+* error code.
+* @param handle      device handle.
+* @param response    response from the device.
+* @param client_data user data associated with the command.
+*/
+typedef void(*HubQuerySlotPowerStatusCallback)(uint8_t status, uint8_t handle, HubQuerySlotPowerStatusResponse *response, void *client_data);
+
+/**
+* Get the power supply state of each hub slot.
+* @param  cb            callback for the command.
+* @param  client_data   user data associated with the command.
+* @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+*/
+uint8_t HubQuerySlotPowerStatus(HubQuerySlotPowerStatusCallback cb, void *client_data);
 
 /**
  * Start LiDAR sampling.
