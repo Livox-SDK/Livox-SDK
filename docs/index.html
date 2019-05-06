@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.15"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Livox SDK API: Main Page</title>
+<title>Livox SDK API: 1 Introduction</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -31,7 +31,7 @@
   <td id="projectlogo"><img alt="Logo" src="1.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Livox SDK API
-   &#160;<span id="projectnumber">v1.0.0</span>
+   &#160;<span id="projectnumber">V1.1.0</span>
    </div>
   </td>
  </tr>
@@ -86,11 +86,72 @@ $(document).ready(function(){initNavTree('index.html','');});
 </iframe>
 </div>
 
-<div class="header">
+<div class="PageDoc"><div class="header">
   <div class="headertitle">
-<div class="title">Livox SDK API Documentation</div>  </div>
+<div class="title">1 Introduction </div>  </div>
 </div><!--header-->
 <div class="contents">
+<div class="textblock"><p>Livox SDK is the software development kit designed for all Livox products. It is developed based on C/C++ following Livox SDK Communication Protocol, and provides easy-to-use C style API. With Livox SDK, users can quickly connect to Livox products and receive point cloud data.</p>
+<p>Livox SDK consists of Livox SDK communication protocol, Livox SDK core, Livox SDK API, Linux sample, and ROS demo.</p>
+<h2>Prerequisites</h2>
+<ul>
+<li>Ubuntu 14.04/Ubuntu 16.04, both x86 and ARM (Nvidia TX2)</li>
+<li>Windows 7/10, Visual Studio 2015/2017</li>
+<li>C++11 compiler.</li>
+</ul>
+<h1>2 Livox SDK Communication Protocol</h1>
+<p>Livox SDK communication protocol opens to all users. It is the communication protocol between user programs and Livox products. The protocol consists of control commands and data format. Please refer to the <a href="https://github.com/Livox-SDK/Livox-SDK/wiki/Livox-SDK-Communication-Protocol">Livox SDK Communication Protocol</a> for detailed information.</p>
+<h1>3 Livox SDK Core</h1>
+<p>Livox SDK provides the implementation of control commands and point cloud data transmission, as well as the C/C++ API. The basic structure of Livox SDK core is shown as below:</p>
+<div class="image">
+<img src="sdk.png" alt="sdk.png"/>
+<div class="caption">
+Livox SDK Architecture</div></div>
+<p>User Datagram Protocol (UDP) is used for communication between Livox SDK and LiDAR sensors. Please refer to the Livox SDK Communication Protocol for further information. Point cloud data handler supports point cloud data transmission, while command handler receives and sends control commands. And the C/C++ API is based on command handler and point cloud data handler.</p>
+<p>The Livox LiDAR sensors can be connected to host directly or through the Livox Hub. Livox SDK supports both connection methods. When LiDAR units are connected to host directly, the host will establish communication with each LiDAR unit individually. And if the LiDAR units connect to host through Hub, then the host only communicates with the Livox Hub while the Hub communicates with each LiDAR unit.</p>
+<h1>4 Livox SDK API</h1>
+<p>Livox SDK API provides a set of C style functions which can be conveniently integrated in C/C++ programs. Please refer to the <a href="https://livox-sdk.github.io/Livox-SDK/">Livox SDK API Reference</a> for further information.</p>
+<h2>4.1 Installation</h2>
+<p>The installation procedures in Ubuntu 16.04/14.04 LTS and Windows 7/10 are shown here as examples. </p><h3>4.1.1 Ubuntu 16.04/14.04 LTS</h3>
+<h4>Dependencies</h4>
+<p>Livox SDK requires <a href="https://cmake.org/">CMake 3.0.0+</a>, <a href="http://apr.apache.org/">Apache Portable Runtime (APR) 1.61+</a> and <a href="https://www.boost.org/">Boost 1.54+</a> as dependencies. You can install these packages using apt: </p><div class="fragment"><div class="line">sudo apt install cmake libapr1-dev libboost-atomic-dev libboost-system-dev</div></div><!-- fragment --> <h4>Compile Livox SDK</h4>
+<p>In the Livox SDK directory, run the following commands to compile the project: </p><div class="fragment"><div class="line">git clone https://github.com/Livox-SDK/Livox-SDK.git</div><div class="line">cd Livox-SDK/build</div><div class="line">cmake ..</div><div class="line">make</div><div class="line">sudo make install</div></div><!-- fragment --> <h3>4.1.2 Windows 7/10</h3>
+<h4>Dependencies</h4>
+<p>Livox SDK supports Visual Studio 2015/2017 and requires <a href="https://cmake.org/">CMake 3.0.0+</a>, <a href="http://apr.apache.org/">Apache Portable Runtime (APR) 1.61+</a> and <a href="https://www.boost.org/">Boost 1.54+</a> as dependencies. <a href="https://github.com/Microsoft/vcpkg">vcpkg</a> is recommended for building the dependency libraries as follows: For the 32-bit project: </p><div class="fragment"><div class="line">.\vcpkg install apr</div><div class="line">.\vcpkg install boost-atomic</div><div class="line">.\vcpkg install boost-system</div><div class="line">.\vcpkg install boost-thread</div><div class="line">.\vcpkg integrate install</div></div><!-- fragment --><p> For the 64-bit project: </p><div class="fragment"><div class="line">.\vcpkg install apr:x64-windows</div><div class="line">.\vcpkg install boost-atomic:x64-windows</div><div class="line">.\vcpkg install boost-system:x64-windows</div><div class="line">.\vcpkg install boost-thread:x64-windows</div><div class="line">.\vcpkg integrate install</div></div><!-- fragment --><p> Then, in the Livox SDK directory, run the following commands to create the Visual Studio solution file. Please replace [vcpkgroot] with your vcpkg installation path. Generate the 32-bit project: </p><div class="fragment"><div class="line">cd build &amp;&amp; \</div><div class="line">cmake .. &quot;-DCMAKE_TOOLCHAIN_FILE=[vcpkgroot]\scripts\buildsystems\vcpkg.cmake&quot;</div></div><!-- fragment --><p> Generate the 64-bit project: </p><div class="fragment"><div class="line">cd build &amp;&amp; \</div><div class="line">cmake .. -G &quot;Visual Studio 15 2017 Win64&quot; &quot;-DCMAKE_TOOLCHAIN_FILE=[vcpkgroot]\scripts\buildsystems\vcpkg.cmake&quot;</div></div><!-- fragment --> <h4>Compile Livox SDK</h4>
+<p>You can now compile the Livox SDK in Visual Studio. </p><h2>4.2 Run Livox SDK Sample</h2>
+<p>Two samples are provided in Sample/Lidar and Sample/Hub, which demonstrate how to configure Livox LiDAR units and receive the point cloud data when directly connecting Livox SDK to LiDAR units or by using a Livox Hub, respectively. The sequence diagram is shown as below:</p>
+<div class="image">
+<img src="sample.png" alt="sample.png"/>
+</div>
+   <h3>4.2.1 Ubuntu 16.04 /14.04 LTS</h3>
+<p>For Ubuntun 16.04/14.04 LTS, run the <em>lidar_sample</em> if connect with the LiDAR unit(s): </p><div class="fragment"><div class="line">cd sample/lidar &amp;&amp; ./lidar_sample</div></div><!-- fragment --><p> or run the <em>hub_sample</em> if connect with the hub unit(s): </p><div class="fragment"><div class="line">cd sample/hub &amp;&amp; ./hub_sample</div></div><!-- fragment --> <h3>4.2.2 Windows 7/10</h3>
+<p>After compiling the Livox SDK as shown in section 4.1.2, you can find <code>hub_sample.exe</code> or <code>lidar_sample.exe</code> in the {Livox-SDK}\build\sample\hub\Debug or {Livox-SDK}\build\sample\lidar\Debug folder, respectively, which can be run directly.</p>
+<p>Then you can see the information as below:</p>
+<div class="image">
+<img src="sdk_init.png" alt="sdk_init.png"/>
+</div>
+   <h3>4.3 Connect to the specific LiDAR units</h3>
+<p>Samples we provided will connect all the broadcast device in you LAN in default.There are two ways to connect the specific units:</p>
+<ul>
+<li>run sample with input options</li>
+<li>edit the Broadcast Code list in source code</li>
+</ul>
+<p><b>NOTE:</b></p>
+<p>Each Livox LiDAR unit owns a unique Broadcast Code . The broadcast code consists of its serial number and an additional number (1,2, or 3). The serial number can be found on the body of the LiDAR unit (below the QR code).The Broadcast Code may be used when you want to connect to the specific LiDAR unit(s). The detailed format is shown as below:</p>
+<div class="image">
+<img src="broadcast_code.png" alt="broadcast_code.png"/>
+<div class="caption">
+Broadcast Code</div></div>
+<h4>4.3.1 Program Options</h4>
+<p>We provide the following program options for connecting the specific units and saving log file: </p><div class="fragment"><div class="line">[-c]:Register LiDAR units by Broadcast Code.Connect the registered units ONLY. </div><div class="line">[-l]:Save the log file(In the executable file&#39;s directory).</div><div class="line">[-h]:Show help.</div></div><!-- fragment --><p> Here is the example: </p><div class="fragment"><div class="line">./lidar_sample -c &quot;00000000000002&amp;00000000000003&amp;00000000000004&quot; -l</div><div class="line">./hub_sample -c &quot;00000000000001&quot; -l</div></div><!-- fragment --><h4>4.3.2 Edit Broadcast Code List</h4>
+<p>Comment the following code section:</p>
+<div class="fragment"><div class="line">/** Connect all the broadcast device. */</div><div class="line">int lidar_count = 0;</div><div class="line">char broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize];</div></div><!-- fragment --><p>Remove the comment of the following code section, set the BROADCAST_CODE_LIST_SIZE and replace the broadcast code lists in the <code>main.c</code> for both LiDAR sample ({Livox-SDK}/sample/lidar/main.c) and Hub sample ({Livox-SDK}/sample/hub/main.c) with the broadcast code of your devices before building.</p>
+<div class="fragment"><div class="line">/** Connect the broadcast device in list, please input the broadcast code and modify the BROADCAST_CODE_LIST_SIZE. */</div><div class="line">/*#define BROADCAST_CODE_LIST_SIZE  3</div><div class="line">int lidar_count = BROADCAST_CODE_LIST_SIZE;</div><div class="line">char broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize] = {</div><div class="line">  &quot;000000000000002&quot;,</div><div class="line">  &quot;000000000000003&quot;,</div><div class="line">  &quot;000000000000004&quot;</div><div class="line">};*/</div></div><!-- fragment --><h1>5 Support</h1>
+<p>You can get support from Livox with the following methods:</p><ul>
+<li>Send email to <a href="#" onclick="location.href='mai'+'lto:'+'dev'+'@l'+'ivo'+'xt'+'ech'+'.c'+'om'; return false;">dev@l<span style="display: none;">.nosp@m.</span>ivox<span style="display: none;">.nosp@m.</span>tech.<span style="display: none;">.nosp@m.</span>com</a> with a clear description of your problem and your setup</li>
+<li>Github Issues </li>
+</ul>
+</div></div><!-- PageDoc -->
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

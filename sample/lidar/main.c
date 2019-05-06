@@ -63,15 +63,15 @@ char broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize] = {
 };*/
 
 /** Receiving point cloud data from Livox LiDAR. */
-void GetLidarData(uint8_t handle, LivoxEthPacket *data, uint32_t data_num) {
+void GetLidarData(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data) {
   if (data) {
     data_recveive_count[handle] += data_num;
     if (data_recveive_count[handle] % 10000 == 0) {
       printf("receive packet count %d %d\n", handle, data_recveive_count[handle]);
 
-	  /** Parsing the timestamp and the point cloud data. */
-	  uint64_t cur_timestamp = *((uint64_t *)(data->timestamp));
-	  LivoxRawPoint *p_point_data = (LivoxRawPoint *)data->data;
+      /** Parsing the timestamp and the point cloud data. */
+      uint64_t cur_timestamp = *((uint64_t *)(data->timestamp));
+      LivoxRawPoint *p_point_data = (LivoxRawPoint *)data->data;
     }
   }
 }
@@ -172,7 +172,7 @@ void OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
   result = AddLidarToConnect(info->broadcast_code, &handle);
   if (result == kStatusSuccess) {
     /** Set the point cloud data for a specific Livox LiDAR. */
-    SetDataCallback(handle, GetLidarData);
+    SetDataCallback(handle, GetLidarData, NULL);
     devices[handle].handle = handle;
     devices[handle].device_state = kDeviceStateDisconnect;
   }
@@ -195,8 +195,14 @@ int SetProgramOption(int argc, const char *argv[]) {
   int optch = 0;
   const char *optarg = NULL;
 
-  apr_initialize();
-  apr_pool_create(&mp, NULL);
+  if (apr_initialize() != APR_SUCCESS) {
+    return -1;
+  }
+
+  if (apr_pool_create(&mp, NULL) != APR_SUCCESS) {
+    return -1;
+  }
+
   rv = apr_getopt_init(&opt, mp, argc, argv);
   if (rv != APR_SUCCESS) {
     printf("Program options initialization failed.\n");

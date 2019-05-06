@@ -75,8 +75,8 @@ uint8_t GetConnectedDevices(DeviceInfo *devices, uint8_t *size) {
   return kStatusSuccess;
 }
 
-void SetDataCallback(uint8_t handle, DataCallback cb) {
-  data_handler().AddDataListener(handle, cb);
+void SetDataCallback(uint8_t handle, DataCallback cb, void *client_data) {
+  data_handler().AddDataListener(handle, cb, client_data);
 }
 
 uint8_t DeviceSampleControl(uint8_t handle, bool enable, CommonCommandCallback cb, void *data) {
@@ -292,18 +292,15 @@ uint8_t HubSetExtrinsicParameter(HubSetExtrinsicParameterRequest *req,
   return result ? kStatusSuccess : kStatusFailure;
 }
 
-uint8_t HubGetExtrinsicParameter(HubGetExtrinsicParameterRequest *req,
-                                 uint16_t length,
-                                 HubGetExtrinsicParameterCallback cb,
-                                 void *client_data) {
+uint8_t HubGetExtrinsicParameter(HubGetExtrinsicParameterCallback cb, void *client_data) {
   if (device_manager().device_mode() != kDeviceModeHub) {
     return kStatusNotSupported;
   }
   bool result = command_handler().SendCommand(kHubDefaultHandle,
                                               kCommandSetHub,
                                               kCommandIDHubGetExtrinsicParameter,
-                                              (uint8_t *)req,
-                                              length,
+                                              NULL,
+                                              0,
                                               MakeCommandCallback<HubGetExtrinsicParameterResponse>(cb, client_data));
   return result ? kStatusSuccess : kStatusFailure;
 }
@@ -348,5 +345,18 @@ uint8_t HubRainFogSuppress(HubRainFogSuppressRequest *req,
                                               (uint8_t *)req,
                                               length,
                                               MakeCommandCallback<HubRainFogSuppressResponse>(cb, client_data));
+  return result ? kStatusSuccess : kStatusFailure;
+}
+
+uint8_t HubQuerySlotPowerStatus(HubQuerySlotPowerStatusCallback cb, void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  bool result = command_handler().SendCommand(kHubDefaultHandle,
+                                              kCommandSetHub,
+                                              kCommandIDHubQuerySlotPowerStatus,
+                                              NULL,
+                                              0,
+                                              MakeCommandCallback<HubQuerySlotPowerStatusResponse>(cb, client_data));
   return result ? kStatusSuccess : kStatusFailure;
 }

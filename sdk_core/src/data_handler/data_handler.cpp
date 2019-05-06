@@ -38,10 +38,11 @@ DataHandler &data_handler() {
   return handler;
 }
 
-bool DataHandler::AddDataListener(uint8_t handle, const DataCallback &cb) {
+bool DataHandler::AddDataListener(uint8_t handle, const DataCallback &cb, void *client_data) {
   if (handle >= callbacks_.size()) {
     return false;
   }
+  client_data_[handle] = client_data;
   callbacks_[handle] = cb;
   return true;
 }
@@ -107,7 +108,7 @@ void DataHandler::OnDataCallback(uint8_t handle, void *data, uint16_t size) {
     //LOG_INFO(" timeStampType: {}", (uint32_t) (lidar_data->timestamp_type));
     //LOG_INFO(" timeStamp: {}", (uint32_t) *(lidar_data->time_stamp));
     //LOG_INFO(" dataType: {}", (uint16_t) lidar_data->data_type);
-    cb(handle, lidar_data, size);
+    cb(handle, lidar_data, size, client_data_[handle]);
   }
 }
 

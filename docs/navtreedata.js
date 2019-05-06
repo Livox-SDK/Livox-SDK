@@ -24,6 +24,7 @@ for the JavaScript code in this file
 var NAVTREE =
 [
   [ "Livox SDK API", "index.html", [
+    [ "1 Introduction", "index.html", null ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ],
       [ "Namespace Members", "namespacemembers.html", [
@@ -72,10 +73,10 @@ var NAVTREEINDEX =
 "classspdlog_1_1sinks_1_1wincolor__sink.html#a5032da6fc760507134a7d1eff1a20b0a",
 "core_8h.html#a0af13074db7b689a71bd9ae94f8745a1",
 "format_8h.html#a7c29e7b4a54045f13bd664979804998d",
-"logger_8h.html",
-"spdlog_8h.html#ab3df0dca3174a057e99fc327e8c25c57",
-"structfmt_1_1v5_1_1format__handler.html#a988c9b12cdd78f32d51c231134317a9a",
-"structfmt_1_1v5_1_1internal_1_1make__integer__sequence_3_01_t_00_010_00_01_ns_8_8_8_01_4.html"
+"log__msg_8h_source.html",
+"spdlog_8h.html#ab1211636fc47637f4dc5ee9a18aa1bce",
+"structfmt_1_1v5_1_1format__handler.html#a717e330f9b9cfa519cbf97e5e2a81add",
+"structfmt_1_1v5_1_1internal_1_1make__integer__sequence.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

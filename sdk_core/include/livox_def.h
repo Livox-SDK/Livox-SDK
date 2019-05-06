@@ -90,7 +90,7 @@ typedef enum {
 #pragma pack(1)
 
 #define LIVOX_SDK_MAJOR_VERSION       1
-#define LIVOX_SDK_MINOR_VERSION       1
+#define LIVOX_SDK_MINOR_VERSION       2
 #define LIVOX_SDK_PATCH_VERSION       0
 
 #define kBroadcastCodeSize 16
@@ -109,6 +109,14 @@ typedef struct {
   int32_t z;            /**< Z axis, Unit:mm */
   uint8_t reflectivity; /**< Reflectivity */
 } LivoxRawPoint;
+
+/** Spherical coordinate format. */
+typedef struct {
+  uint32_t depth;       /**< Radial distance, Unit:mm */
+  uint16_t theta;       /**< Polar angle, Unit:0.01rad */
+  uint16_t phi;         /**< Azimuthal angle, Unit:0.01rad */
+  uint8_t reflectivity; /**< Reflectivity */
+} LivoxSpherPoint;
 
 /** Standard point cloud format */
 typedef struct {
@@ -144,7 +152,7 @@ typedef struct {
   uint8_t handle;                          /**< Device handle. */
   uint8_t slot;                            /**< Slot number used for connecting LiDAR. */
   uint8_t id;                              /**< LiDAR id. */
-  uint32_t type;                           /**< Device type, refer to \ref DeviceType. */
+  uint8_t type;                            /**< Device type, refer to \ref DeviceType. */
   uint16_t data_port;                      /**< Point cloud data UDP port. */
   uint16_t cmd_port;                       /**< Control command UDP port. */
   char ip[16];                             /**< IP address. */
@@ -388,6 +396,14 @@ typedef struct {
   uint8_t count;                /**< Count of ret_state_list. */
   ReturnCode ret_state_list[1]; /**< Return code */
 } HubRainFogSuppressResponse;
+
+/**
+* The response body of getting hub slots' power state.
+*/
+typedef struct {
+  uint8_t ret_code;             /**< Return code. */
+  uint16_t slot_power_state;    /**< Slot power status. */
+} HubQuerySlotPowerStatusResponse;
 
 #pragma pack()
 

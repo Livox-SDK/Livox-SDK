@@ -164,6 +164,10 @@ typedef enum {
    * Hub command set, open or close the rain and fog mode of the connected Livox LiDAR.
    */
   kCommandIDHubRainFogSuppression = 7,
+  /**
+  * Hub command set, get the power supply state of each hub slot.
+  */
+  kCommandIDHubQuerySlotPowerStatus = 8,
 
   /**
    * ******************************************************
@@ -173,6 +177,7 @@ typedef enum {
 } HubCommandID;
 
 static const uint16_t HubCommandTimeout[kCommandIDHubCommandCount] = {KDefaultTimeOut,
+                                                                      KDefaultTimeOut,
                                                                       KDefaultTimeOut,
                                                                       KDefaultTimeOut,
                                                                       KDefaultTimeOut,

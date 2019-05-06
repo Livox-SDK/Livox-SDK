@@ -38,7 +38,7 @@ class DataHandlerImpl;
 
 class DataHandler : public noncopyable {
  public:
-  typedef boost::function<void(uint8_t handle, LivoxEthPacket *data, uint32_t data_num)> DataCallback;
+  typedef boost::function<void(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data)> DataCallback;
 
  public:
   DataHandler() : mem_pool_(NULL) {}
@@ -49,13 +49,13 @@ class DataHandler : public noncopyable {
   bool AddDevice(const DeviceInfo &info);
   void RemoveDevice(uint8_t handle);
 
-  bool AddDataListener(uint8_t handle, const DataCallback &cb);
-  //  bool RemoveDataListener(uint8_t handle);
+  bool AddDataListener(uint8_t handle, const DataCallback &cb, void *client_data);
   void OnDataCallback(uint8_t handle, void *data, uint16_t size);
 
  private:
   apr_pool_t *mem_pool_;
   boost::array<DataCallback, kMaxConnectedDeviceNum> callbacks_;
+  boost::array<void *, kMaxConnectedDeviceNum> client_data_;
   boost::scoped_ptr<DataHandlerImpl> impl_;
 };
 
