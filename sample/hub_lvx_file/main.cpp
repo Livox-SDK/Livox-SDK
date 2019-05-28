@@ -96,7 +96,7 @@ void OnGetLidarUnitsExtrinsicParameter(uint8_t status, uint8_t handle, HubGetExt
         strncpy((char *)lidar_info.hub_broadcast_code, broadcast_code_list[0].c_str(), kBroadcastCodeSize);
 
         std::unique_ptr<DeviceInfo[]> device_list(new DeviceInfo[kMaxLidarCount]);
-        std::unique_ptr<uint8_t> size(new uint8_t);
+        std::unique_ptr<uint8_t> size(new uint8_t(kMaxLidarCount));
         GetConnectedDevices(device_list.get(), size.get());
         for (int j = 0; j < kMaxLidarCount; j++) {
           if (strncmp(device_list[j].broadcast_code, temp.broadcast_code, kBroadcastCodeSize) == 0) {

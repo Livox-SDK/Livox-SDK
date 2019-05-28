@@ -28,12 +28,12 @@ The Livox LiDAR sensors can be connected to host directly or through the Livox H
 Livox SDK API provides a set of C style functions which can be conveniently integrated in C/C++ programs. Please refer to the [Livox SDK API Reference](https://livox-sdk.github.io/Livox-SDK/) for further information.
 
 ## 4.1 Installation
-The installation procedures in Ubuntu 16.04/14.04 LTS and Windows 7/10 are shown here as examples.
+The installation procedures in Ubuntu 16.04/14.04 LTS and Windows 7/10 are shown here as examples. For Ubuntu 16.04/14.04 32-bit LTS and Mac, you can get it in [Livox-SDK wiki](https://github.com/Livox-SDK/Livox-SDK/wiki).
 ### 4.1.1 Ubuntu 16.04/14.04 LTS
 #### Dependencies
 Livox SDK requires [CMake 3.0.0+](https://cmake.org/), [Apache Portable Runtime (APR) 1.61+](http://apr.apache.org/) and [Boost 1.54+](https://www.boost.org/) as dependencies. You can install these packages using apt:
 ```
-sudo apt install cmake libapr1-dev libboost-atomic-dev libboost-system-dev
+sudo apt install cmake pkg-config libapr1-dev libboost-atomic-dev libboost-system-dev
 ```
 #### Compile Livox SDK
 In the Livox SDK directory, run the following commands to compile the project:

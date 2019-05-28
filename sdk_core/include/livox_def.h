@@ -91,7 +91,7 @@ typedef enum {
 
 #define LIVOX_SDK_MAJOR_VERSION       1
 #define LIVOX_SDK_MINOR_VERSION       2
-#define LIVOX_SDK_PATCH_VERSION       0
+#define LIVOX_SDK_PATCH_VERSION       1
 
 #define kBroadcastCodeSize 16
 
