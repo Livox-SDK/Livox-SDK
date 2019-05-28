@@ -23,7 +23,7 @@
 //
 
 #include <time.h>
-#include <math.h>
+#include <cmath>
 #include "lvx_file.h"
 #include "third_party/rapidxml/rapidxml.hpp"
 #include "third_party/rapidxml/rapidxml_utils.hpp"
@@ -33,7 +33,7 @@
 #define PACK_POINT_NUM   100
 #define M_PI             3.14159265358979323846
 
-LvxFileHandle::LvxFileHandle() : cur_offset_(0), cur_frame_index_(0) {
+LvxFileHandle::LvxFileHandle() : cur_frame_index_(0), cur_offset_(0) {
 }
 
 bool LvxFileHandle::InitLvxFile() {
@@ -159,9 +159,9 @@ void LvxFileHandle::CalcExtrinsicPoints(LvxBasePackDetail &packet) {
   info.roll = static_cast<float>(info.roll * M_PI / 180.0);
   info.pitch = static_cast<float>(info.pitch * M_PI / 180.0);
   info.yaw = static_cast<float>(info.yaw * M_PI / 180.0);
-  float rotate[3][3] = { { cos(info.pitch) * cos(info.yaw), sin(info.roll) * sin(info.pitch) * cos(info.yaw) - cos(info.roll) * sin(info.yaw), cos(info.roll) * sin(info.pitch) * cos(info.yaw) + sin(info.roll) * sin(info.yaw) },
-                         { cos(info.pitch) * sin(info.yaw), sin(info.roll) * sin(info.pitch) * sin(info.yaw) + cos(info.roll) * cos(info.yaw), cos(info.roll) * sin(info.pitch) * sin(info.yaw) - sin(info.roll) * cos(info.yaw) },
-                         { -sin(info.pitch), sin(info.roll) * cos(info.pitch), cos(info.roll) * cos(info.pitch) } };
+  float rotate[3][3] = { { std::cos(info.pitch) * std::cos(info.yaw), std::sin(info.roll) * std::sin(info.pitch) * std::cos(info.yaw) - std::cos(info.roll) * std::sin(info.yaw), std::cos(info.roll) * std::sin(info.pitch) * std::cos(info.yaw) + std::sin(info.roll) * std::sin(info.yaw) },
+                         { std::cos(info.pitch) * std::sin(info.yaw), std::sin(info.roll) * std::sin(info.pitch) * std::sin(info.yaw) + std::cos(info.roll) * std::cos(info.yaw), std::cos(info.roll) * std::sin(info.pitch) * std::sin(info.yaw) - std::sin(info.roll) * std::cos(info.yaw) },
+                         { -std::sin(info.pitch), std::sin(info.roll) * std::cos(info.pitch), std::cos(info.roll) * std::cos(info.pitch) } };
 
   float trans[3] = { static_cast<float>(info.x), static_cast<float>(info.y), static_cast<float>(info.z) };
   if (packet.data_type == 0) {
@@ -174,7 +174,7 @@ void LvxFileHandle::CalcExtrinsicPoints(LvxBasePackDetail &packet) {
   }
   else {
     for (int i = 0; i < PACK_POINT_NUM; i++) {
-      LivoxPoint temp = { packet.point[i].x * sin(packet.point[i].y) * cos(packet.point[i].z), packet.point[i].x * sin(packet.point[i].y) * sin(packet.point[i].z), packet.point[i].x * cos(packet.point[i].y) };;
+      LivoxPoint temp = { packet.point[i].x * std::sin(packet.point[i].y) * std::cos(packet.point[i].z), packet.point[i].x * std::sin(packet.point[i].y) * std::sin(packet.point[i].z), packet.point[i].x * std::cos(packet.point[i].y) };
       packet.point[i].x = temp.x * rotate[0][0] + temp.y * rotate[0][1] + temp.z * rotate[0][2] + trans[0];
       packet.point[i].y = temp.x * rotate[1][0] + temp.y * rotate[1][1] + temp.z * rotate[1][2] + trans[1];
       packet.point[i].z = temp.x * rotate[2][0] + temp.y * rotate[2][1] + temp.z * rotate[2][2] + trans[2];

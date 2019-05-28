@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.0)
 set(SDK_LIBRARY ${PROJECT_NAME}_static)
 add_library(${SDK_LIBRARY} STATIC "")
 
+set(LIVOX_SDK_MAJOR_VERSION "1")
+set(LIVOX_SDK_MINOR_VERSION "2")
+set(LIVOX_SDK_PATCH_VERSION "1")
+set(LIVOX_SDK_VERSION_STRING "${LIVOX_SDK_MAJOR_VERSION}.${LIVOX_SDK_MINOR_VERSION}.${LIVOX_SDK_PATCH_VERSION}")
+
 if (WIN32)
     find_path(APR_INCLUDE_DIRS apr.h)
     find_library(APR_LIBRARIES libapr-1)
@@ -18,18 +23,30 @@ if (APR_FOUND)
     target_include_directories(${SDK_LIBRARY}
             PUBLIC
             ${APR_INCLUDE_DIRS})
-    target_link_libraries(${SDK_LIBRARY}
-            PUBLIC
-            ${APR_LIBRARIES})
+    if (APR_LIBRARY_DIRS AND NOT APPLE)
+        target_link_libraries(${SDK_LIBRARY}
+                PUBLIC
+                ${APR_LIBRARY_DIRS}/libapr-1.so)
+    else ()
+        target_link_libraries(${SDK_LIBRARY}
+                PUBLIC
+                ${APR_LIBRARIES})
+    endif ()
 endif ()
 
 find_package(Boost 1.54 REQUIRED COMPONENTS system)
-if (Boost_FOUND AND Boost_VERSION LESS 106900)
-    target_link_libraries(${SDK_LIBRARY}
-            PUBLIC
-            Boost::boost
-            Boost::system)
-endif ()
+if(Boost_FOUND)
+    if (Boost_VERSION LESS 106900)
+        target_link_libraries(${SDK_LIBRARY} 
+                PUBLIC
+                Boost::boost
+                Boost::system)
+    else()
+        target_link_libraries(${SDK_LIBRARY}     
+                PUBLIC      
+                Boost::boost)
+    endif()
+endif()
 
 target_include_directories(${SDK_LIBRARY}
         PUBLIC

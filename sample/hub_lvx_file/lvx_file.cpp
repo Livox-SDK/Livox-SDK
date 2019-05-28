@@ -23,7 +23,7 @@
 //
 
 #include <time.h>
-#include <math.h>
+#include <cmath>
 #include "lvx_file.h"
 
 #define WRITE_BUFFER_LEN 1024 * 1024
@@ -31,7 +31,7 @@
 #define PACK_POINT_NUM   100
 #define M_PI             3.14159265358979323846
 
-LvxFileHandle::LvxFileHandle() : cur_offset_(0), cur_frame_index_(0) {
+LvxFileHandle::LvxFileHandle() : cur_frame_index_(0), cur_offset_(0) {
 }
 
 bool LvxFileHandle::InitLvxFile() {
@@ -148,7 +148,7 @@ void LvxFileHandle::BasePointsHandle(LivoxEthPacket *data, LvxBasePackDetail &pa
       packet.point[i].y = static_cast<float>(tmp[i].theta);
       packet.point[i].z = static_cast<float>(tmp[i].phi);
       packet.point[i].reflectivity = tmp[i].reflectivity;
-      LivoxPoint temp = { packet.point[i].x * sin(packet.point[i].y) * cos(packet.point[i].z), packet.point[i].x * sin(packet.point[i].y) * sin(packet.point[i].z), packet.point[i].x * cos(packet.point[i].y) };;
+      LivoxPoint temp = { packet.point[i].x * std::sin(packet.point[i].y) * std::cos(packet.point[i].z), packet.point[i].x * std::sin(packet.point[i].y) * std::sin(packet.point[i].z), packet.point[i].x * std::cos(packet.point[i].y) };
       packet.point[i] = temp;
     }
   }
