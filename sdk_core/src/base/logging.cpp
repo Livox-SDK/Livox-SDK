@@ -28,6 +28,12 @@ std::shared_ptr<spdlog::logger> logger = NULL;
 bool is_save_log_file = false;
 
 void InitLogger() {
+
+  if (spdlog::get("console") != nullptr) {
+    logger = spdlog::get("console");
+    return;
+  }
+
   std::vector<spdlog::sink_ptr> sinkList;
   auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   consoleSink->set_level(spdlog::level::debug);
