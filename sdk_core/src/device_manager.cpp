@@ -110,15 +110,19 @@ void DeviceManager::UpdateDevices(const DeviceInfo &device, DeviceEvent type) {
     connected_cb_(&device, type);
   }
 
-  if ((device_mode_ == kDeviceModeHub) && (type == kEventConnect)) {
-    LOG_DEBUG("Send Query lidars command");
-    command_handler().SendCommand(kHubDefaultHandle,
-                                  kCommandSetHub,
-                                  kCommandIDHubQueryLidarInformation,
-                                  NULL,
-                                  0,
-                                  MakeCommandCallback<DeviceManager, HubQueryLidarInformationResponse>(
-                                      this, &DeviceManager::HubLidarInfomationCallback));
+  if (device_mode_ == kDeviceModeHub) {
+    if (type == kEventConnect) {
+      LOG_DEBUG("Send Query lidars command");
+      command_handler().SendCommand(kHubDefaultHandle,
+                                    kCommandSetHub,
+                                    kCommandIDHubQueryLidarInformation,
+                                    NULL,
+                                    0,
+                                    MakeCommandCallback<DeviceManager, HubQueryLidarInformationResponse>(
+                                        this, &DeviceManager::HubLidarInfomationCallback));
+    } else if (connected_cb_) {
+      connected_cb_(&device, type);
+    }
   }
 }
 
@@ -227,7 +231,8 @@ void DeviceManager::UpdateDeviceState(uint8_t handle, const HeartbeatResponse &r
     update = true;
   }
   if (info.status.progress != response.error_union.progress) {
-    LOG_INFO(" Update progress {}, device connect {}", (uint16_t)response.error_union.progress, devices_[handle].connected);
+    LOG_INFO(
+        " Update progress {}, device connect {}", (uint16_t)response.error_union.progress, devices_[handle].connected);
     info.status.progress = response.error_union.progress;
     update = true;
   }
