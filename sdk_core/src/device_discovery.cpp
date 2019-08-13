@@ -210,6 +210,9 @@ void DeviceDiscovery::OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr
       result = false;
       break;
     }
+    LOG_INFO(" LocalIP: {}", inet_ntoa(*(struct in_addr *)&local_ip));
+    LOG_INFO("Command Port: {}", lidar_info.cmd_port);
+    LOG_INFO("Data Port: {}", lidar_info.data_port);
     CommPacket packet;
     memset(&packet, 0, sizeof(packet));
     handshake_req.ip_addr = local_ip;
