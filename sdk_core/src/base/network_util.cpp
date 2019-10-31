@@ -99,21 +99,25 @@ bool FindLocalIP(const struct sockaddr_in &client_addr, uint32_t &local_ip) {
 
   IP_ADAPTER_INFO *pAdapter = reinterpret_cast<IP_ADAPTER_INFO *>(pAdapterInfo.get());
   if (NO_ERROR == dlRetVal && pAdapter != NULL) {
-    while (GetAdapterState(pAdapter)) {
-      std::string str_ip = pAdapter->IpAddressList.IpAddress.String;
-      std::string str_mask = pAdapter->IpAddressList.IpMask.String;
-      ULONG host_ip = inet_addr(const_cast<char *>(str_ip.c_str()));
-      ULONG host_mask = inet_addr(const_cast<char *>(str_mask.c_str()));
+    while (pAdapter != NULL) {
+      if (GetAdapterState(pAdapter)) {
+	std::string str_ip = pAdapter->IpAddressList.IpAddress.String;
+	std::string str_mask = pAdapter->IpAddressList.IpMask.String;
+	ULONG host_ip = inet_addr(const_cast<char *>(str_ip.c_str()));
+	ULONG host_mask = inet_addr(const_cast<char *>(str_mask.c_str()));
 
-      if ((host_ip & host_mask) ==
-        (client_addr.sin_addr.S_un.S_addr & host_mask)) {
-        local_ip = host_ip;
-        found = true;
-        break;
+	if ((host_ip & host_mask) ==
+	  (client_addr.sin_addr.S_un.S_addr & host_mask)) {
+	  local_ip = host_ip;
+	  found = true;
+	  break;
+	}
       }
+
       pAdapter = pAdapter->Next;
     }
   }
+
   return found;
 }
 #else
