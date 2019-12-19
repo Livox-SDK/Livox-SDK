@@ -39,6 +39,7 @@ bool IOLoop::Init() {
   if (mem_pool_ == NULL) {
     return false;
   }
+
 #ifdef WIN32
   apr_status_t rv =
       apr_pollset_create(&pollset_, kMaxPollCount, mem_pool_, APR_POLLSET_WAKEABLE);
@@ -80,6 +81,12 @@ void IOLoop::RemoveDelegate(apr_socket_t *sock, IOLoopDelegate *) {
   PostTask(boost::bind(&IOLoop::RemoveDelegateAsync, this, sock));
 }
 
+void IOLoop::RemoveDelegateSync(apr_socket_t *sock) {
+  apr_os_thread_t thread_id = apr_os_thread_current();
+  assert(apr_os_thread_equal(this->thread_id_, thread_id));
+  RemoveDelegateAsync(sock);
+}
+
 void IOLoop::Loop() {
   apr_int32_t num = 0;
   const apr_pollfd_t *ret_pfd = NULL;
@@ -88,7 +95,6 @@ void IOLoop::Loop() {
   if (rv == APR_SUCCESS) {
     for (int i = 0; i < num; i++) {
       ClientData *data = static_cast<ClientData *>(ret_pfd[i].client_data);
-      ;
       if (data) {
         IOLoopDelegate *delegate = data->first;
         if (delegate) {

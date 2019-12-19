@@ -46,17 +46,17 @@ class CommandHandler : public noncopyable {
   bool AddDevice(const DeviceInfo &info);
   void RemoveDevice(uint8_t handle);
 
-  bool SendCommand(uint8_t handle,
-                   uint8_t command_set,
-                   uint8_t command_id,
-                   uint8_t *data,
-                   uint16_t length,
-                   const boost::shared_ptr<CommandCallback> &cb);
+  livox_status SendCommand(uint8_t handle,
+                           uint8_t command_set,
+                           uint8_t command_id,
+                           uint8_t *data,
+                           uint16_t length,
+                           const boost::shared_ptr<CommandCallback> &cb);
 
-  bool RegisterPush(uint8_t handle,
-                    uint8_t command_set,
-                    uint8_t command_id,
-                    const boost::shared_ptr<CommandCallback> &cb);
+  livox_status RegisterPush(uint8_t handle,
+                            uint8_t command_set,
+                            uint8_t command_id,
+                            const boost::shared_ptr<CommandCallback> &cb);
 
   void OnCommand(uint8_t handle, const Command &command);
 
@@ -84,7 +84,7 @@ class CommandHandlerImpl : public CommandChannelDelegate {
   virtual bool AddDevice(const DeviceInfo &info) = 0;
   virtual bool RemoveDevice(uint8_t handle) = 0;
 
-  virtual bool SendCommand(uint8_t handle, const Command &command) = 0;
+  virtual livox_status SendCommand(uint8_t handle, const Command &command) = 0;
 
   virtual void OnCommand(uint8_t handle, const Command &command) {
     if (handler_) {

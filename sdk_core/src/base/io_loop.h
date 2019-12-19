@@ -60,9 +60,12 @@ class IOLoop : public noncopyable {
   void Uninit();
   void AddDelegate(apr_socket_t *sock, IOLoopDelegate *delegate, void *data = NULL);
   void RemoveDelegate(apr_socket_t *sock, IOLoopDelegate *delegate);
+  void RemoveDelegateSync(apr_socket_t *sock);
   void Loop();
   bool Wakeup();
   void PostTask(const IOLoopTask &task);
+  void SetThreadId (apr_os_thread_t thread_id) { thread_id_ = thread_id; }
+  apr_os_thread_t GetThreadId () { return thread_id_; }
 
  private:
   void AddDelegateAsync(apr_socket_t *sock, IOLoopDelegate *delegate, void *data);
@@ -80,6 +83,7 @@ class IOLoop : public noncopyable {
   bool enable_timer_;
   bool enable_wake_;
   std::vector<IOLoopTask> pending_tasks_;
+  apr_os_thread_t thread_id_;
 };
 
 }  // namespace livox

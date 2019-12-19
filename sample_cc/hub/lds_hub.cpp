@@ -83,7 +83,7 @@ int LdsHub::InitLdsHub(std::vector<std::string>& broadcast_code_strs) {
   printf("Livox SDK version %d.%d.%d\n", _sdkversion.major, _sdkversion.minor, _sdkversion.patch);
 
   SetBroadcastCallback(LdsHub::OnDeviceBroadcast);
-  SetDeviceStateUpdateCallback(LdsHub::OnDeviceChange);
+  SetDeviceStateUpdateCallback(LdsHub::OnDeviceInfoChange);
 
   /** Add commandline input broadcast code */
   for (auto input_str : broadcast_code_strs) {
@@ -138,7 +138,7 @@ int LdsHub::DeInitLdsHub(void) {
 }
 
 /** Static function in LdsLidar for callback */
-void LdsHub::GetLidarDataCb(uint8_t hub_handle, LivoxEthPacket *data,
+void LdsHub::OnHubDataCb(uint8_t hub_handle, LivoxEthPacket *data,
                             uint32_t data_num, void *client_data) {
 
   LdsHub* lds_hub = static_cast<LdsHub *>(client_data);
@@ -157,11 +157,25 @@ void LdsHub::GetLidarDataCb(uint8_t hub_handle, LivoxEthPacket *data,
   if (data) {
     lds_hub->receive_packet_count_++;
     if (0 == (lds_hub->receive_packet_count_ % 100)) {
-      printf("Receive packet count %d %d\n", handle, lds_hub->receive_packet_count_);
+      printf("Receive packet handle: %d count: %d\n", handle, lds_hub->receive_packet_count_);
 
       /** Parsing the timestamp and the point cloud data. */
       uint64_t cur_timestamp = *((uint64_t *)(data->timestamp));
-      LivoxRawPoint *p_point_data = (LivoxRawPoint *)data->data;
+      if(data ->data_type == kCartesian) {
+        LivoxRawPoint *p_point_data = (LivoxRawPoint *)data->data;
+      }else if ( data ->data_type == kSpherical) {
+        LivoxSpherPoint *p_point_data = (LivoxSpherPoint *)data->data;
+      }else if ( data ->data_type == kExtendCartesian) {
+        LivoxExtendRawPoint *p_point_data = (LivoxExtendRawPoint *)data->data;
+      }else if ( data ->data_type == kExtendSpherical) {
+        LivoxExtendSpherPoint *p_point_data = (LivoxExtendSpherPoint *)data->data;
+      }else if ( data ->data_type == kDualExtendCartesian) {
+        LivoxDualExtendRawPoint *p_point_data = (LivoxDualExtendRawPoint *)data->data;
+      }else if ( data ->data_type == kDualExtendSpherical) {
+        LivoxDualExtendSpherPoint *p_point_data = (LivoxDualExtendSpherPoint *)data->data;
+      }else if ( data ->data_type == kImu) {
+        LivoxImuPoint *p_point_data = (LivoxImuPoint *)data->data;
+      }
     }
   }
 }
@@ -193,17 +207,19 @@ void LdsHub::OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
     uint8_t handle = 0;
     result = AddHubToConnect(info->broadcast_code, &handle);
     if (result == kStatusSuccess && handle < kMaxLidarCount) {
-      SetDataCallback(handle, LdsHub::GetLidarDataCb, (void *)g_lds_hub);
+      SetDataCallback(handle, LdsHub::OnHubDataCb, (void *)g_lds_hub);
       p_hub->handle = handle;
       p_hub->connect_state = kConnectStateOff;
+      //config hub's parameter
+      p_hub->config.coordinate = kCoordinateCartesian;
     } else {
-      printf("Add Hub to connect is failed : %d %d \n", result, handle);
+      printf("Add Hub to connect failed, result : %d, handle: %d.\n", result, handle);
     }
   }
 }
 
 /** Callback function of changing of device state. */
-void LdsHub::OnDeviceChange(const DeviceInfo *info, DeviceEvent type) {
+void LdsHub::OnDeviceInfoChange(const DeviceInfo *info, DeviceEvent type) {
   if (info == NULL) {
     return;
   }
@@ -213,32 +229,36 @@ void LdsHub::OnDeviceChange(const DeviceInfo *info, DeviceEvent type) {
   }
 
   LidarDevice* p_hub = &g_lds_hub->hub_;
-  if (type == kEventConnect) {
+  if (type == kEventHubConnectionChange) {
     if (p_hub->connect_state == kConnectStateOff) {
       p_hub->connect_state = kConnectStateOn;
       p_hub->info = *info;
     }
+    printf("[WARNING] Hub sn: [%s] Connection Change!!!\n", info->broadcast_code);
   } else if (type == kEventDisconnect) {
     p_hub->connect_state = kConnectStateOff;
-    printf("Hub[%s] disconnect!\n", info->broadcast_code);
+    printf("[WARNING] Hub sn: [%s] Disconnect!!!\n", info->broadcast_code);
   } else if (type == kEventStateChange) {
     p_hub->info = *info;
-    printf("Hub[%s] StateChange\n", info->broadcast_code);
+    printf("Hub sn [%s] StateChange!!!\n", info->broadcast_code);
   }
 
   if (p_hub->connect_state == kConnectStateOn) {
-    printf("Hub[%s] status_code[%d] working state[%d] feature[%d]\n", \
-           p_hub->info.broadcast_code,\
-           p_hub->info.status.status_code,\
-           p_hub->info.state,\
-           p_hub->info.feature);
+    printf("Hub Working State %d\n", p_hub->info.state);
+    if (p_hub->info.state == kLidarStateInit) {
+      printf("Hub State Change Progress %u\n", p_hub->info.status.progress);
+    } else {
+      printf("Hub State Error Code 0X%08x\n", p_hub->info.status.status_code.error_code);
+    }
+    printf("Hub feature %d\n", p_hub->info.feature);
+    SetErrorMessageCallback(p_hub->handle, LdsHub::HubErrorStatusCb);
     if (p_hub->info.state == kLidarStateNormal) {
       HubQueryLidarInformation(HubQueryLidarInfoCb, g_lds_hub);
     }
   }
 }
 
-void LdsHub::HubQueryLidarInfoCb(uint8_t status, uint8_t handle, \
+void LdsHub::HubQueryLidarInfoCb(livox_status status, uint8_t handle, \
                                  HubQueryLidarInformationResponse *response,\
                                  void *client_data) {
   LdsHub* lds_hub = static_cast<LdsHub *>(client_data);
@@ -263,6 +283,11 @@ void LdsHub::HubQueryLidarInfoCb(uint8_t status, uint8_t handle, \
           strncpy(p_lidar->info.broadcast_code, \
                   response->device_info_list[i].broadcast_code, \
                   sizeof(p_lidar->info.broadcast_code));
+          //config lidar's parameter
+          p_lidar->config.enable_fan = true;
+          p_lidar->config.return_mode = kStrongestReturn;
+          p_lidar->config.imu_rate = kImuFreq200Hz;
+
           printf("[%d]%s DeviceType[%d] Slot[%d] Ver[%d.%d.%d.%d]\n", index, \
                  p_lidar->info.broadcast_code,\
                  p_lidar->info.type, p_lidar->info.slot,\
@@ -272,45 +297,202 @@ void LdsHub::HubQueryLidarInfoCb(uint8_t status, uint8_t handle, \
                  response->device_info_list[i].version[3]);
         }
       }
-
-      HubStartSampling(StartSampleCb, lds_hub);
-      lds_hub->hub_.connect_state = kConnectStateSampling;
+      LdsHub::ConfigLidarsOfHub(lds_hub);
     } else {
       printf("Hub have no lidar, will not start sample!\n");
       HubQueryLidarInformation(HubQueryLidarInfoCb, lds_hub);
     }
   } else {
     printf("Device Query Informations Failed %d\n", status);
+    HubQueryLidarInformation(HubQueryLidarInfoCb, lds_hub);
+  }
+}
+
+/** Callback function of hub error message. */
+void LdsHub::HubErrorStatusCb(livox_status status, uint8_t handle, ErrorMessage *message) {
+  static uint32_t error_message_count = 0;
+  if (message != NULL) {
+    ++error_message_count;
+    if (0 == (error_message_count % 100)) {
+      printf("handle: %u\n", handle);
+      printf("sync_status : %u\n", message->hub_error_code.sync_status);
+      printf("temp_status : %u\n", message->hub_error_code.temp_status);
+      printf("lidar_status :%u\n", message->hub_error_code.lidar_status);
+      printf("lidar_link_status : %u\n", message->hub_error_code.lidar_link_status);
+      printf("firmware_err : %u\n", message->hub_error_code.firmware_err);
+      printf("system_status : %u\n", message->hub_error_code.system_status);
+    }
+  }
+}
+
+void LdsHub::ControlFanCb(livox_status status, uint8_t handle, \
+                          uint8_t response, void *client_data) {
+
+}
+
+void LdsHub::HubSetPointCloudReturnModeCb(livox_status status, uint8_t handle, \
+                                          HubSetPointCloudReturnModeResponse* response,\
+                                          void *client_data) {
+  LdsHub* lds_hub = static_cast<LdsHub *>(client_data);
+  if ((handle >= kMaxLidarCount)  || !response) {
+    return;
+  }
+
+  if ((status != kStatusSuccess) || (response->ret_code)) {
+    printf("Hub set return mode fail!\n");
+    ConfigPointCloudReturnMode(lds_hub);
+  } else {
+    printf("Hub set return mode success!\n");
+    lds_hub->hub_.config.set_bits &= ~((uint32_t)(kConfigReturnMode));
+    if (!lds_hub->hub_.config.set_bits) {
+      HubStartSampling(LdsHub::StartSampleCb, lds_hub);
+      lds_hub->hub_.connect_state = kConnectStateSampling;
+    }
+  }
+}
+
+void LdsHub::SetCoordinateCb(livox_status status, uint8_t handle, \
+                             uint8_t response, void *client_data) {
+  LdsHub* lds_hub = static_cast<LdsHub *>(client_data);
+
+  if (handle >= kMaxLidarCount) {
+    return;
+  }
+
+  LidarDevice* p_hub = &(lds_hub->hub_);
+  if (status == kStatusSuccess) {
+    p_hub->config.set_bits &= ~((uint32_t)(kConfigCoordinate));
+    printf("Set coordinate success!\n");
+
+    if (!p_hub->config.set_bits) {
+      HubStartSampling(LdsHub::StartSampleCb, lds_hub);
+      p_hub->connect_state = kConnectStateSampling;
+    }
+  } else {
+    if (p_hub->config.coordinate != 0) {
+      SetSphericalCoordinate(handle, LdsHub::SetCoordinateCb, lds_hub);
+    } else {
+      SetCartesianCoordinate(handle, LdsHub::SetCoordinateCb, lds_hub);
+    }
+    printf("Set coordinate fail, try again!\n");
+  }
+}
+
+void LdsHub::HubSetImuRatePushFrequencyCb(livox_status status, uint8_t handle, \
+                                          HubSetImuPushFrequencyResponse* response,\
+                                          void *client_data) {
+  LdsHub* lds_hub = static_cast<LdsHub *>(client_data);
+  if ((handle >= kMaxLidarCount) || !response) {
+    return;
+  }
+
+  if ((status != kStatusSuccess) || (response->ret_code)) {
+    printf("Hub set imu freq fail [%d]!\n", response->ret_code);
+    ConfigImuPushFrequency(lds_hub);
+  } else {
+    printf("Hub set imu frequency success!\n");
+    lds_hub->hub_.config.set_bits &= ~((uint32_t)(kConfigImuRate));
+    if (!lds_hub->hub_.config.set_bits) {
+      HubStartSampling(LdsHub::StartSampleCb, lds_hub);
+      lds_hub->hub_.connect_state = kConnectStateSampling;
+    }
   }
 }
 
 /** Callback function of starting sampling. */
-void LdsHub::StartSampleCb(uint8_t status, uint8_t handle, \
-                           uint8_t response, void *clent_data) {
-  LdsHub* lds_hub = static_cast<LdsHub *>(clent_data);
+void LdsHub::StartSampleCb(livox_status status, uint8_t handle, \
+                           uint8_t response, void *client_data) {
+  LdsHub* lds_hub = static_cast<LdsHub *>(client_data);
   if (handle >= kMaxLidarCount) {
     return;
   }
 
   LidarDevice* p_hub = &lds_hub->hub_;
-  if (status == kStatusSuccess) {
-    if (response != 0) {
-      p_hub->connect_state = kConnectStateOn;
-      printf("Hub start sample fail : state[%d] handle[%d] res[%d]\n", \
-             status, handle, response);
-    } else {
-      printf("Hub start sample success!\n");
-    }
-  } else if (status == kStatusTimeout) {
+  if ((status != kStatusSuccess) || (response != 0)) {
     p_hub->connect_state = kConnectStateOn;
-    printf("Hub start sample timeout : state[%d] handle[%d] res[%d]\n", \
+    printf("Hub start sample fail : state[%d] handle[%d] res[%d]\n", \
            status, handle, response);
+
+    for (int i = 0; i < kMaxLidarCount; i++) {
+      LidarDevice* p_lidar = &(lds_hub->lidars_[i]);
+      if (p_lidar->connect_state == kConnectStateSampling) {
+        p_lidar->connect_state = kConnectStateOn;
+      }
+    }
+  } else {
+    printf("Hub start sample success!\n");
   }
 }
 
 /** Callback function of stopping sampling. */
-void LdsHub::StopSampleCb(uint8_t status, uint8_t handle, \
-                          uint8_t response, void *clent_data) {
+void LdsHub::StopSampleCb(livox_status status, uint8_t handle, \
+                          uint8_t response, void *client_data) {
+}
+
+void LdsHub::ConfigPointCloudReturnMode(LdsHub* lds_hub) {
+   uint8_t req_buf[1024];
+   HubSetPointCloudReturnModeRequest* req = (HubSetPointCloudReturnModeRequest *)req_buf;
+   req->count = 0;
+   for (int i = 0; i < kMaxLidarCount; i++) {
+     LidarDevice* p_lidar = &(lds_hub->lidars_[i]);
+
+     if ((p_lidar->info.type != kDeviceTypeLidarMid40) && \
+         (p_lidar->connect_state == kConnectStateSampling)) {
+       strncpy(req->lidar_cfg_list[req->count].broadcast_code, \
+               p_lidar->info.broadcast_code, \
+               sizeof(req->lidar_cfg_list[req->count].broadcast_code));
+       req->lidar_cfg_list[req->count].mode = p_lidar->config.return_mode;
+       req->count++;
+     }
+   }
+
+   if (req->count) {
+     uint32_t length = sizeof(HubSetPointCloudReturnModeRequest) + sizeof(SetPointCloudReturnModeRequestItem) * (req->count - 1);
+     HubSetPointCloudReturnMode(req, length,\
+                                LdsHub::HubSetPointCloudReturnModeCb, lds_hub);
+     lds_hub->hub_.config.set_bits |= kConfigReturnMode;
+  }
+}
+
+void LdsHub::ConfigImuPushFrequency(LdsHub* lds_hub) {
+  uint8_t req_buf[1024];
+  HubSetImuPushFrequencyRequest* req = (HubSetImuPushFrequencyRequest *)req_buf;
+  req->count = 0;
+  for (int i = 0; i < kMaxLidarCount; i++) {
+    LidarDevice* p_lidar = &(lds_hub->lidars_[i]);
+
+    if ((p_lidar->info.type != kDeviceTypeLidarMid40) && \
+        (p_lidar->connect_state == kConnectStateSampling)) {
+      strncpy(req->lidar_cfg_list[req->count].broadcast_code, \
+              p_lidar->info.broadcast_code, \
+              sizeof(req->lidar_cfg_list[req->count].broadcast_code));
+      req->lidar_cfg_list[req->count].freq = p_lidar->config.imu_rate;
+      req->count++;
+    }
+  }
+
+  if (req->count) {
+    uint32_t length = sizeof(HubSetImuPushFrequencyRequest) + sizeof(SetImuPushFrequencyRequestItem) * (req->count -1);
+    HubSetImuPushFrequency(req, length,\
+                           LdsHub::HubSetImuRatePushFrequencyCb, lds_hub);
+    lds_hub->hub_.config.set_bits |= kConfigImuRate;
+  }
+}
+
+void LdsHub::ConfigLidarsOfHub(LdsHub* lds_hub) {
+  ConfigPointCloudReturnMode(lds_hub);
+  ConfigImuPushFrequency(lds_hub);
+
+  if (lds_hub->hub_.config.coordinate != 0) {
+    SetSphericalCoordinate(lds_hub->hub_.handle, LdsHub::SetCoordinateCb, lds_hub);
+    printf("Hub set coordinate spherical\n");
+  } else {
+    printf("Hub set coordinate cartesian\n");
+    SetCartesianCoordinate(lds_hub->hub_.handle, LdsHub::SetCoordinateCb, lds_hub);
+  }
+  lds_hub->hub_.config.set_bits |= kConfigCoordinate;
+
+  lds_hub->hub_.connect_state = kConnectStateConfig;
 }
 
 /** Add broadcast code to whitelist */
@@ -332,12 +514,12 @@ int LdsHub::AddBroadcastCodeToWhitelist(const char* broadcast_code) {
 }
 
 void LdsHub::AddLocalBroadcastCode(void) {
-  for (size_t i=0; i<sizeof(local_broadcast_code_list)/sizeof(intptr_t); ++i) {
+  for (size_t i = 0; i < sizeof(local_broadcast_code_list)/sizeof(intptr_t); ++i) {
     std::string invalid_bd = "000000000";
     printf("Local broadcast code : %s\n", local_broadcast_code_list[i]);
     if ((kBroadcastCodeSize == strlen(local_broadcast_code_list[i])) && \
         (nullptr == strstr(local_broadcast_code_list[i], invalid_bd.c_str()))) {
-      LdsHub::AddBroadcastCodeToWhitelist(local_broadcast_code_list[i]);
+      AddBroadcastCodeToWhitelist(local_broadcast_code_list[i]);
     } else {
       printf("Invalid local broadcast code : %s\n", local_broadcast_code_list[i]);
     }
@@ -349,7 +531,7 @@ bool LdsHub::FindInWhitelist(const char* broadcast_code) {
     return false;
   }
 
-  for (uint32_t i=0; i<whitelist_count_; i++) {
+  for (uint32_t i = 0; i < whitelist_count_; i++) {
     if (strncmp(broadcast_code, broadcast_code_whitelist_[i], kBroadcastCodeSize) == 0) {
       return true;
     }

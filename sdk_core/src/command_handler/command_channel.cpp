@@ -149,7 +149,12 @@ void CommandChannel::OnTimer(apr_time_t now) {
 
 void CommandChannel::Uninit() {
   if (sock_) {
-    loop_->RemoveDelegate(sock_, this);
+    apr_os_thread_t thread_id = apr_os_thread_current();
+    if (apr_os_thread_equal(loop_->GetThreadId(), thread_id)) {
+      loop_->RemoveDelegateSync(sock_);
+    } else {
+      loop_->RemoveDelegate(sock_, this);
+    }
     loop_ = NULL;
     apr_socket_close(sock_);
     sock_ = NULL;
@@ -195,6 +200,9 @@ void CommandChannel::SendInternal(const Command &command) {
   if (rv == APR_SUCCESS) {
     rv = apr_socket_sendto(sock_, sa, 0, (const char *)buf, &apr_size);
   }
+  if (rv != APR_SUCCESS) {
+    (*command.cb)(kStatusSendFailed, handle_, NULL);
+  }
   apr_pool_destroy(subpool);
 }
 
@@ -226,7 +234,7 @@ void CommandChannel::OnHeartbeatAck(const CommPacket &) {
 }
 
 void CommandChannel::DeviceDisconnect(uint8_t handle) {
-  DeviceRemove(handle);
+  DeviceRemove(handle,kEventDisconnect);
 }
 
 void CommandChannel::Send(const Command &command) {

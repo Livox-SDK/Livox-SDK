@@ -34,8 +34,8 @@
 namespace livox {
 namespace util {
 
-apr_socket_t *CreateBindSocket(uint16_t port, apr_pool_t *mem_pool, bool nonblock = true);
-bool FindLocalIP(const struct sockaddr_in &client_addr, uint32_t &local_ip);
+apr_socket_t *CreateBindSocket(uint16_t port, apr_pool_t *mem_pool, bool reuse_port = false, bool nonblock = true);
+bool FindLocalIp(const struct sockaddr_in &client_addr, uint32_t &local_ip);
 
 }  // namespace util
 }  // namespace livox

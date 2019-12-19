@@ -59,22 +59,55 @@ char broadcast_code_list[BROADCAST_CODE_LIST_SIZE][kBroadcastCodeSize] = {
   "00000000000001"
 };*/
 
-void GetLidarData(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data) {
-  static uint32_t receive_packet_count = 0;
-  if (data) {
-    ++receive_packet_count;
-    if (0 == (receive_packet_count % 10000)) {
-      printf("receive packet count %d %d\n", data->id, receive_packet_count);
-
-      /** Parsing the timestamp and the point cloud data. */
-      uint64_t cur_timestamp = *((uint64_t *)(data->timestamp));
-      LivoxRawPoint *p_point_data = (LivoxRawPoint *)data->data;
+/** Receiving error message from Livox Hub. */
+void OnHubErrorStatusCallback(livox_status status, uint8_t handle, ErrorMessage *message) {
+  static uint32_t error_message_count = 0;
+  if (message != NULL) {
+    ++error_message_count;
+    if (0 == (error_message_count % 100)) {
+      printf("handle: %u\n", handle);
+      printf("sync_status : %u\n", message->hub_error_code.sync_status);
+      printf("temp_status : %u\n", message->hub_error_code.temp_status);
+      printf("lidar_status :%u\n", message->hub_error_code.lidar_status);
+      printf("lidar_link_status : %u\n", message->hub_error_code.lidar_link_status);
+      printf("firmware_err : %u\n", message->hub_error_code.firmware_err);
+      printf("system_status : %u\n", message->hub_error_code.system_status);
     }
-    printf("receive packet from %d \n", (uint16_t) HubGetLidarHandle(data->slot, data->id));
   }
 }
 
-void OnSampleCallback(uint8_t status, uint8_t handle, uint8_t response, void *data) {
+/** Receiving point cloud data from Livox Hub. */
+void GetHubData(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data) {
+  static uint32_t receive_packet_count = 0;
+  if (data) {
+    ++receive_packet_count;
+    if (0 == (receive_packet_count % 1000)) {
+      printf("receive packet handle: %d count: %d\n", (uint16_t) HubGetLidarHandle(data->slot, data->id), receive_packet_count);
+
+      /** Parsing the timestamp and the point cloud data. */
+      uint64_t cur_timestamp = *((uint64_t *)(data->timestamp));
+      if(data ->data_type == kCartesian) {
+        LivoxRawPoint *p_point_data = (LivoxRawPoint *)data->data;
+      }else if ( data ->data_type == kSpherical) {
+        LivoxSpherPoint *p_point_data = (LivoxSpherPoint *)data->data;
+      }else if ( data ->data_type == kExtendCartesian) {
+        LivoxExtendRawPoint *p_point_data = (LivoxExtendRawPoint *)data->data;
+      }else if ( data ->data_type == kExtendSpherical) {
+        LivoxExtendSpherPoint *p_point_data = (LivoxExtendSpherPoint *)data->data;
+      }else if ( data ->data_type == kDualExtendCartesian) {
+        LivoxDualExtendRawPoint *p_point_data = (LivoxDualExtendRawPoint *)data->data;
+      }else if ( data ->data_type == kDualExtendSpherical) {
+        LivoxDualExtendSpherPoint *p_point_data = (LivoxDualExtendSpherPoint *)data->data;
+      }else if ( data ->data_type == kImu) {
+        LivoxImuPoint *p_point_data = (LivoxImuPoint *)data->data;
+      }
+      printf("data_type %d data num %d\n", data->data_type, data_num);
+    }
+  }
+}
+
+/** Callback function of starting sampling. */
+void OnSampleCallback(livox_status status, uint8_t handle, uint8_t response, void *data) {
   printf("OnSampleCallback statue %d handle %d response %d \n", status, handle, response);
   if (status == kStatusSuccess) {
     if (response != 0) {
@@ -85,24 +118,13 @@ void OnSampleCallback(uint8_t status, uint8_t handle, uint8_t response, void *da
   }
 }
 
-void OnStopSampleCallback(uint8_t status, uint8_t handle, uint8_t response, void *data) {
+/** Callback function of stopping sampling. */
+void OnStopSampleCallback(livox_status status, uint8_t handle, uint8_t response, void *data) {
 
 }
 
-void OnDeviceInformation(uint8_t status, uint8_t handle, DeviceInformationResponse *ack, void *data) {
-  if (status != kStatusSuccess) {
-    printf("Device Query Informations Failed %d\n", status);
-  }
-  if (ack) {
-    printf("firm ver: %d.%d.%d.%d\n",
-           ack->firmware_version[0],
-           ack->firmware_version[1],
-           ack->firmware_version[2],
-           ack->firmware_version[3]);
-  }
-}
-
-void OnHubLidarInfo(uint8_t status, uint8_t handle, HubQueryLidarInformationResponse *response, void *client_data) {
+/** Callback function of get LiDAR units' information. */
+void OnHubLidarInfo(livox_status status, uint8_t handle, HubQueryLidarInformationResponse *response, void *client_data) {
   if (status != kStatusSuccess) {
     printf("Device Query Informations Failed %d\n", status);
   }
@@ -117,7 +139,44 @@ void OnHubLidarInfo(uint8_t status, uint8_t handle, HubQueryLidarInformationResp
   }
 }
 
-void OnDeviceChange(const DeviceInfo *info, DeviceEvent type) {
+void HubDeviceDisconnect() {
+  uint8_t handle = 0;
+  for (handle = 0; handle < kMaxLidarCount; ++handle) {
+    if (devices[handle].device_state == kDeviceStateConnect ) {
+      devices[handle].device_state = kDeviceStateDisconnect;
+    }
+  }
+}
+
+void HubDeviceConnect(const DeviceInfo *info) {
+  HubDeviceDisconnect();
+  uint8_t handle = info->handle;
+  DeviceInfo *_devices = (DeviceInfo *) malloc(sizeof(DeviceInfo) * kMaxLidarCount);
+  uint8_t count = kMaxLidarCount;
+  livox_status status = GetConnectedDevices(_devices, &count);
+  if (status == kStatusSuccess) {
+    int i = 0;
+    for (i = 0; i < count; ++i) {
+      uint8_t handle = _devices[i].handle;
+      if (handle < kMaxLidarCount) {
+        devices[handle].handle = handle;
+        devices[handle].info = _devices[i];
+        devices[handle].device_state = kDeviceStateConnect;
+      }
+    }
+  }
+  if (_devices) {
+    free(_devices);
+  }
+  HubQueryLidarInformation(OnHubLidarInfo, NULL);
+}
+
+void HubDeviceStateChange(const DeviceInfo *info) {
+  devices[info->handle].info = *info;
+}
+
+/** Callback function of changing of device state. */
+void OnDeviceInfoChange(const DeviceInfo *info, DeviceEvent type) {
   if (info == NULL) {
     return;
   }
@@ -126,55 +185,37 @@ void OnDeviceChange(const DeviceInfo *info, DeviceEvent type) {
   if (handle >= kMaxLidarCount) {
     return;
   }
-  if (type == kEventConnect) {
-    DeviceInfo *_devices = (DeviceInfo *) malloc(sizeof(DeviceInfo) * kMaxLidarCount);
-
-    uint8_t count = kMaxLidarCount;
-    uint8_t status = GetConnectedDevices(_devices, &count);
-    if (status == kStatusSuccess) {
-      int i = 0;
-      for (i = 0; i < count; ++i) {
-        uint8_t handle = _devices[i].handle;
-        if (handle < kMaxLidarCount) {
-          devices[handle].handle = handle;
-          devices[handle].info = _devices[i];
-          devices[handle].device_state = kDeviceStateConnect;
-        }
-      }
-    }
-    if (_devices) {
-      free(_devices);
-    }
-    if (devices[handle].info.type == kDeviceTypeHub) {
-      HubQueryLidarInformation(OnHubLidarInfo, NULL);
-    }
-    if (devices[handle].device_state == kDeviceStateDisconnect) {
-      devices[handle].device_state = kDeviceStateConnect;
-      devices[handle].info = *info;
-    }
+  if (type == kEventHubConnectionChange) {
+    HubDeviceConnect(info);
+    printf("[WARNING] Hub sn: [%s] Connection Change!!!\n", info->broadcast_code);
   } else if (type == kEventDisconnect) {
-    devices[handle].device_state = kDeviceStateDisconnect;
+    HubDeviceDisconnect();
+    printf("[WARNING] Hub sn [%s] Disconnect!!!\n", info->broadcast_code);
   } else if (type == kEventStateChange) {
-    devices[handle].info = *info;
+    HubDeviceStateChange(info);
+    printf("[WARNING] Hub sn [%s] StateChange!!!\n", info->broadcast_code);
   }
-
   if (devices[handle].device_state == kDeviceStateConnect) {
-    printf("Device State error_code %d\n", devices[handle].info.status.status_code);
-    printf("Device State working state %d\n", devices[handle].info.state);
-    printf("Device feature %d\n", devices[handle].info.feature);
+    SetErrorMessageCallback(handle, OnHubErrorStatusCallback);
+    printf("Hub Working State %d\n", devices[handle].info.state);
+    if (devices[handle].info.state == kLidarStateInit) {
+      printf("Hub State Change Progress %u\n", devices[handle].info.status.progress);
+    } else {
+      printf("Hub State Error Code 0X%08x\n", devices[handle].info.status.status_code.error_code);
+    }
+    printf("Hub feature %d\n", devices[handle].info.feature);
     if (devices[handle].info.state == kLidarStateNormal) {
-      if (devices[handle].info.type == kDeviceTypeHub) {
-        HubStartSampling(OnSampleCallback, NULL);
-      } else {
-        LidarStartSampling(handle, OnSampleCallback, NULL);
-      }
+      HubStartSampling(OnSampleCallback, NULL);
       devices[handle].device_state = kDeviceStateSampling;
     }
   }
 }
 
+/** Callback function when broadcast message received.
+ * You need to add listening device broadcast code and set the point cloud data callback in this function.
+ */
 void OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
-  if (info == NULL) {
+  if (info == NULL || info->dev_type != kDeviceTypeHub) {
     return;
   }
 
@@ -198,7 +239,7 @@ void OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
   uint8_t handle = 0;
   result = AddHubToConnect(info->broadcast_code, &handle);
   if (result == kStatusSuccess && handle < kMaxLidarCount) {
-    SetDataCallback(handle, GetLidarData, NULL);
+    SetDataCallback(handle, GetHubData, NULL);
     devices[handle].handle = handle;
     devices[handle].device_state = kDeviceStateDisconnect;
   }
@@ -212,9 +253,9 @@ int SetProgramOption(int argc, const char *argv[]) {
   apr_pool_t *mp = NULL;
   static const apr_getopt_option_t opt_option[] = {
     /** Long-option, short-option, has-arg flag, description */
-    { "code", 'c', 1, "Register device broadcast code" },     
-    { "log", 'l', 0, "Save the log file" },    
-    { "help", 'h', 0, "Show help" },    
+    { "code", 'c', 1, "Register device broadcast code" },
+    { "log", 'l', 0, "Save the log file" },
+    { "help", 'h', 0, "Show help" },
     { NULL, 0, 0, NULL },
   };
   apr_getopt_t *opt = NULL;
@@ -241,6 +282,7 @@ int SetProgramOption(int argc, const char *argv[]) {
     switch (optch) {
     case 'c':
       printf("Register broadcast code: %s\n", optarg);
+      is_connect_all_broadcast_device = false;
       strncpy(broadcast_code_list[0], optarg, kBroadcastCodeSize);
       break;
     case 'l':
@@ -286,11 +328,18 @@ int main(int argc, const char *argv[]) {
   printf("Livox SDK version %d.%d.%d .\n", _sdkversion.major, _sdkversion.minor, _sdkversion.patch);
 
   memset(devices, 0, sizeof(devices));
-  SetBroadcastCallback(OnDeviceBroadcast);
-  SetDeviceStateUpdateCallback(OnDeviceChange);
 
+/** Set the callback function receiving broadcast message from Livox LiDAR. */
+  SetBroadcastCallback(OnDeviceBroadcast);
+
+/** Set the callback function called when device state change,
+ * which means connection/disconnection and changing of LiDAR state.
+ */
+  SetDeviceStateUpdateCallback(OnDeviceInfoChange);
+
+/** Start the device discovering routine. */
   if (Start()) {
-	printf("Start discovering device.\n");
+  printf("Start discovering device.\n");
 
 #ifdef WIN32
     Sleep(20000);
@@ -298,11 +347,11 @@ int main(int argc, const char *argv[]) {
     sleep(20);
 #endif
     HubStopSampling(OnStopSampleCallback, NULL);
-    printf("stop sample\n");
+    printf("Stop sample\n");
 #ifdef WIN32
-    Sleep(10000);
+    Sleep(2000);
 #else
-    sleep(10);
+    sleep(2);
 #endif
   }
 

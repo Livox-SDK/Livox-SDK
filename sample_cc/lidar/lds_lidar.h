@@ -37,13 +37,36 @@
 typedef enum {
   kConnectStateOff = 0,
   kConnectStateOn = 1,
-  kConnectStateSampling = 2,
+  kConnectStateConfig = 2,
+  kConnectStateSampling = 3,
 } LidarConnectState;
+
+typedef enum {
+  kConfigFan = 1,
+  kConfigReturnMode = 2,
+  kConfigCoordinate = 4,
+  kConfigImuRate = 8
+} LidarConfigCodeBit;
+
+typedef enum {
+  kCoordinateCartesian = 0,
+  kCoordinateSpherical
+} CoordinateType;
+
+typedef struct {
+  bool enable_fan;
+  uint32_t return_mode;
+  uint32_t coordinate;
+  uint32_t imu_rate;
+  volatile uint32_t set_bits;
+  volatile uint32_t get_bits;
+} UserConfig;
 
 typedef struct {
   uint8_t handle;
   LidarConnectState connect_state;
   DeviceInfo info;
+  UserConfig config;
 } LidarDevice;
 
 /**
@@ -70,10 +93,19 @@ class LdsLidar {
                              uint32_t data_num, void *client_data);
   static void OnDeviceBroadcast(const BroadcastDeviceInfo *info);
   static void OnDeviceChange(const DeviceInfo *info, DeviceEvent type);
-  static void StartSampleCb(uint8_t status, uint8_t handle, uint8_t response, void *clent_data);
-  static void StopSampleCb(uint8_t status, uint8_t handle, uint8_t response, void *clent_data);
-  static void DeviceInformationCb(uint8_t status, uint8_t handle, \
+  static void StartSampleCb(livox_status status, uint8_t handle, uint8_t response, void *clent_data);
+  static void StopSampleCb(livox_status status, uint8_t handle, uint8_t response, void *clent_data);
+  static void DeviceInformationCb(livox_status status, uint8_t handle, \
                                   DeviceInformationResponse *ack, void *clent_data);
+  static void LidarErrorStatusCb(livox_status status, uint8_t handle, ErrorMessage *message);
+  static void ControlFanCb(livox_status status, uint8_t handle, \
+                           uint8_t response, void *clent_data);
+  static void SetPointCloudReturnModeCb(livox_status status, uint8_t handle, \
+                                        uint8_t response, void *clent_data);
+  static void SetCoordinateCb(livox_status status, uint8_t handle, \
+                              uint8_t response, void *clent_data);
+  static void SetImuRatePushFrequencyCb(livox_status status, uint8_t handle, \
+                                        uint8_t response, void *clent_data);
 
   int AddBroadcastCodeToWhitelist(const char* broadcast_code);
   void AddLocalBroadcastCode(void);

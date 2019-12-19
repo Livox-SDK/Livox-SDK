@@ -42,20 +42,25 @@ bool LidarCommandHandlerImpl::AddDevice(const DeviceInfo &info) {
   return true;
 }
 
-bool LidarCommandHandlerImpl::SendCommand(uint8_t handle, const Command &command) {
+livox_status LidarCommandHandlerImpl::SendCommand(uint8_t handle, const Command &command) {
   CommandChannel *channel = NULL;
+  bool found = false;
   for (list<DeviceItem>::iterator ite = devices_.begin(); ite != devices_.end(); ++ite) {
     if (ite->info.handle == handle) {
+      found = true;
       channel = ite->channel.get();
       break;
     }
   }
-
-  if (channel) {
-    channel->SendAsync(command);
-    return true;
+  if (!found) {
+    return kStatusInvalidHandle;
   }
-  return false;
+  if (!channel) {
+    return kStatusChannelNotExist;
+  }
+  channel->SendAsync(command);
+
+  return kStatusSuccess;
 }
 
 bool LidarCommandHandlerImpl::RemoveDevice(uint8_t handle) {

@@ -46,12 +46,12 @@ bool HubCommandHandlerImpl::AddDevice(const DeviceInfo &info) {
   return true;
 }
 
-bool HubCommandHandlerImpl::SendCommand(uint8_t, const Command &command) {
+livox_status HubCommandHandlerImpl::SendCommand(uint8_t, const Command &command) {
   if (channel_ == NULL) {
-    return false;
+    return kStatusChannelNotExist;
   }
   channel_->SendAsync(command);
-  return true;
+  return kStatusSuccess;
 }
 
 bool HubCommandHandlerImpl::RemoveDevice(uint8_t) {

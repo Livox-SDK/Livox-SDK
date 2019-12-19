@@ -29,8 +29,6 @@
 
 namespace livox {
 
-static const size_t kSphericalCoordinatePointSize = 9;
-static const size_t kCartesianCoordinatePointSize = 13;
 static const size_t kPrefixDataSize = 18;
 
 DataHandler &data_handler() {
@@ -91,12 +89,30 @@ void DataHandler::OnDataCallback(uint8_t handle, void *data, uint16_t size) {
     return;
   }
   DataCallback cb = callbacks_[handle];
-  if (lidar_data->data_type == 0) {
-    size = (size - kPrefixDataSize) / kCartesianCoordinatePointSize;
-  } else if (lidar_data->data_type == 1) {
-    size = (size - kPrefixDataSize) / kSphericalCoordinatePointSize;
-  } else {
-    return;
+  switch (lidar_data->data_type) {
+    case kCartesian:
+      size = (size - kPrefixDataSize) / sizeof(LivoxRawPoint);
+      break;
+    case kSpherical:
+      size = (size - kPrefixDataSize) / sizeof(LivoxSpherPoint);
+      break;
+    case kExtendCartesian:
+      size = (size - kPrefixDataSize) / sizeof(LivoxExtendRawPoint);
+      break;
+    case kExtendSpherical:
+      size = (size - kPrefixDataSize) / sizeof(LivoxExtendSpherPoint);
+      break;
+    case kDualExtendCartesian:
+      size = (size - kPrefixDataSize) / sizeof(LivoxDualExtendRawPoint);
+      break;
+    case kDualExtendSpherical:
+      size = (size - kPrefixDataSize) / sizeof(LivoxDualExtendSpherPoint);
+      break;
+    case kImu:
+      size = (size - kPrefixDataSize) / sizeof(LivoxImuPoint);
+      break;
+    default: 
+      return;
   }
   if (cb) {
     //LOG_INFO(" device_sn: {}",  device_sn);

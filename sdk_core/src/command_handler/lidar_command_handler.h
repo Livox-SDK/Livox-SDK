@@ -38,7 +38,7 @@ class LidarCommandHandlerImpl : public CommandHandlerImpl {
 
   bool AddDevice(const DeviceInfo &info);
   bool RemoveDevice(uint8_t handle);
-  bool SendCommand(uint8_t handle, const Command &command);
+  livox_status SendCommand(uint8_t handle, const Command &command);
 
  private:
   typedef struct {

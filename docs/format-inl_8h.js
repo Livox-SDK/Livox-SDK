@@ -17,7 +17,7 @@ var format_inl_8h =
     [ "grisu2_gen_digits", "format-inl_8h.html#aa8305888233bc94e346b9c162f6a8f18", null ],
     [ "grisu2_prettify", "format-inl_8h.html#a171b42c0035379bd3c3983f573ee09db", null ],
     [ "grisu2_round", "format-inl_8h.html#a5d09560672b4a60a1414fa7321b9ea66", null ],
-    [ "operator *", "format-inl_8h.html#a1fa02ff736934db730c7545b4c840a4c", null ],
+    [ "operator*", "format-inl_8h.html#a3d8332f4e1ff7eb4cdacf32a3fdf972a", null ],
     [ "operator-", "format-inl_8h.html#a96be9ab86d7703a1aace4eda80007e69", null ],
     [ "process_specs", "format-inl_8h.html#a63add7333da71960d33855aa1489c2ee", null ],
     [ "report_system_error", "format-inl_8h.html#aede03e1a36d834c65a48c9349a085fc8", null ],

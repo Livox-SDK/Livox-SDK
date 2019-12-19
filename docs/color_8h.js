@@ -182,8 +182,8 @@ var color_8h =
     [ "make_emphasis", "color_8h.html#a8ef34ce57c1deb6af9b8c62f27edb49c", null ],
     [ "make_foreground_color", "color_8h.html#ae4693bb9287d6264cdbded4233e707c0", null ],
     [ "operator|", "color_8h.html#a7e5a3d7f521a367387e1191c7893a240", null ],
-    [ "print", "color_8h.html#ab1d87084097ae33226e005179e09befd", null ],
     [ "print", "color_8h.html#a7373458bc3acf69f580a4ead0ebc159f", null ],
+    [ "print", "color_8h.html#ab1d87084097ae33226e005179e09befd", null ],
     [ "reset_color", "color_8h.html#a3c469199b831e4d4d2b3728bb8e99b1f", null ],
     [ "reset_color< wchar_t >", "color_8h.html#acba41814a0db9856bd9785841f7aa4a0", null ],
     [ "vprint", "color_8h.html#a4df07cd85241561a9b8ce9a7351b1606", null ]

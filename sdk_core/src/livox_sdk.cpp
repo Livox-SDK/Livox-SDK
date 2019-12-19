@@ -30,6 +30,7 @@
 #include "device_manager.h"
 using namespace livox;
 IOThread *g_thread = NULL;
+static bool is_initialized = false;
 
 void GetLivoxSdkVersion(LivoxSdkVersion *version) {
   if (version != NULL) {
@@ -40,6 +41,10 @@ void GetLivoxSdkVersion(LivoxSdkVersion *version) {
 }
 
 bool Init() {
+  if (is_initialized) {
+    return false;
+  }
+
   bool result = false;
   do {
     InitLogger();
@@ -78,10 +83,14 @@ bool Init() {
     apr_terminate();
   }
 
+  is_initialized = result;
   return result;
 }
 
 void Uninit() {
+  if (!is_initialized) {
+    return;
+  }
   if (g_thread) {
     g_thread->Quit();
     g_thread->Join();
@@ -97,9 +106,10 @@ void Uninit() {
     delete g_thread;
     g_thread = NULL;
   }
-
+  
   UninitLogger();
   apr_terminate();
+  is_initialized = false;
 }
 
 bool Start() {

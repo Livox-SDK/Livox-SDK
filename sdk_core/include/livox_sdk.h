@@ -101,36 +101,36 @@ void SetDeviceStateUpdateCallback(DeviceStateUpdateCallback cb);
  * @param broadcast_code device's broadcast code.
  * @param handle device handle. For Livox Hub, the handle is always 31; for LiDAR units connected to the Livox Hub,
  * the corresponding handle is (slot-1)*3+id-1.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t AddHubToConnect(const char *broadcast_code, uint8_t *handle);
+livox_status AddHubToConnect(const char *broadcast_code, uint8_t *handle);
 
 /**
  * Add a broadcast code to the connecting list and only devices with broadcast code in this list will be connected. The
  * broadcast code is unique for every device.
  * @param broadcast_code device's broadcast code.
  * @param handle device handle. The handle is the same as the order calling AddLidarToConnect starting from 0.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t AddLidarToConnect(const char *broadcast_code, uint8_t *handle);
+livox_status AddLidarToConnect(const char *broadcast_code, uint8_t *handle);
 
 /**
  * Get all connected devices' information.
  * @param devices list of connected devices' information.
  * @param size    number of devices connected.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t GetConnectedDevices(DeviceInfo *devices, uint8_t *size);
+livox_status GetConnectedDevices(DeviceInfo *devices, uint8_t *size);
 
 /**
  * Function type of callback that queries device's information.
- * @param status   kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref ResponseStatus for other
+ * @param status   kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
  * error code.
  * @param handle   device handle.
  * @param response response from the device.
  * @param client_data user data associated with the command.
  */
-typedef void (*DeviceInformationCallback)(uint8_t status,
+typedef void (*DeviceInformationCallback)(livox_status status,
                                           uint8_t handle,
                                           DeviceInformationResponse *response,
                                           void *client_data);
@@ -140,9 +140,9 @@ typedef void (*DeviceInformationCallback)(uint8_t status,
  * @param  handle        device handle.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t QueryDeviceInformation(uint8_t handle, DeviceInformationCallback cb, void *client_data);
+livox_status QueryDeviceInformation(uint8_t handle, DeviceInformationCallback cb, void *client_data);
 
 /**
  * Callback function for receiving point cloud data.
@@ -164,29 +164,29 @@ void SetDataCallback(uint8_t handle, DataCallback cb, void *client_data);
 
 /**
  * Function type of callback with 1 byte of response.
- * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref ResponseStatus for other
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
  * error code.
  * @param handle      device handle.
  * @param response    response from the device.
  * @param client_data user data associated with the command.
  */
-typedef void (*CommonCommandCallback)(uint8_t status, uint8_t handle, uint8_t response, void *client_data);
+typedef void (*CommonCommandCallback)(livox_status status, uint8_t handle, uint8_t response, void *client_data);
 
 /**
  * Start hub sampling.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t HubStartSampling(CommonCommandCallback cb, void *client_data);
+livox_status HubStartSampling(CommonCommandCallback cb, void *client_data);
 
 /**
  * Stop the Livox Hub's sampling.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t HubStopSampling(CommonCommandCallback cb, void *client_data);
+livox_status HubStopSampling(CommonCommandCallback cb, void *client_data);
 
 /**
  * Get the LiDAR unit handle used in the Livox Hub data callback function from slot and id.
@@ -194,85 +194,133 @@ uint8_t HubStopSampling(CommonCommandCallback cb, void *client_data);
  * @param  id     Livox Hub's id.
  * @return LiDAR unit handle.
  */
-uint8_t HubGetLidarHandle(uint8_t slot, uint8_t id);
+livox_status HubGetLidarHandle(uint8_t slot, uint8_t id);
 
 /**
- * Command to change point cloud coordinate system to cartesian coordinate.
+ * Disconnect divice.
  * @param  handle        device handle.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t SetCartesianCoordinate(uint8_t handle, CommonCommandCallback cb, void *client_data);
+livox_status DisconnectDevice(uint8_t handle, CommonCommandCallback cb, void *client_data);
+
+/**
+ * Change point cloud coordinate system to cartesian coordinate.
+ * @param  handle        device handle.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status SetCartesianCoordinate(uint8_t handle, CommonCommandCallback cb, void *client_data);
 
 /**
  * Change point cloud coordinate system to spherical coordinate.
  * @param  handle        device handle.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t SetSphericalCoordinate(uint8_t handle, CommonCommandCallback cb, void *client_data);
+livox_status SetSphericalCoordinate(uint8_t handle, CommonCommandCallback cb, void *client_data);
 
 /**
  * Callback of the error status message.
+ * kStatusSuccess on successful return, see \ref LivoxStatus for other
  * @param handle      device handle.
  * @param response    response from the device.
  */
-typedef void (*ErrorMessageCallback)(uint8_t handle, ErrorMessage *message);
+typedef void (*ErrorMessageCallback)(livox_status status, uint8_t handle, ErrorMessage *message);
 
 /**
  * Add error status callback for the device.
+ * error code.
  * @param  handle        device handle.
  * @param  cb            callback for the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t SetErrorMessageCallback(uint8_t handle, ErrorMessageCallback cb);
+livox_status SetErrorMessageCallback(uint8_t handle, ErrorMessageCallback cb);
 
 /**
  * Set device's IP mode.
+ * @note \ref SetStaticDynamicIP only supports setting Hub or Mid40/100's IP mode.
+ * If you want to set Horizon or Tele's IP mode, see \ref SetStaticIp and \ref SetDynamicIp.
  * @param  handle        device handle.
  * @param  req           request sent to device.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t SetStaticDynamicIP(uint8_t handle,
-                           SetDeviceIPModeRequest *req,
-                           CommonCommandCallback cb,
-                           void *client_data);
+livox_status SetStaticDynamicIP(uint8_t handle,
+                                SetDeviceIPModeRequest *req,
+                                CommonCommandCallback cb,
+                                void *client_data);
+/**
+ * Set device's static IP mode.
+ * @note Mid40/100 is not supported to set subnet mask and gateway address. 
+ * \ref SetStaticDeviceIpModeRequest's setting: net_mask and gw_addr will not take effect on Mid40/100.
+ * @param  handle        device handle.
+ * @param  req           request sent to device.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status SetStaticIp(uint8_t handle,
+                         SetStaticDeviceIpModeRequest *req,
+                         CommonCommandCallback cb,
+                         void *client_data);
 
 /**
+ * Set device's dynamic IP mode.
+ * @param  handle        device handle.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status SetDynamicIp(uint8_t handle,
+                          CommonCommandCallback cb,
+                          void *client_data);
+/**
  * Callback function that gets device's IP information.
- * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref ResponseStatus for other
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
  * error code.
  * @param handle      device handle.
  * @param response    response from the device.
  * @param client_data user data associated with the command.
  */
-typedef void (*GetDeviceIPInformationCallback)(uint8_t status,
-                                        uint8_t handle,
-                                        GetDeviceIPModeResponse *response,
-                                        void *client_data);
+typedef void (*GetDeviceIpInformationCallback)(livox_status status,
+                                               uint8_t handle,
+                                               GetDeviceIpModeResponse *response,
+                                               void *client_data);
 
 /**
  * Get device's IP mode.
  * @param  handle        device handle.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t GetDeviceIPInformation(uint8_t handle, GetDeviceIPInformationCallback cb, void *client_data);
+livox_status GetDeviceIpInformation(uint8_t handle, GetDeviceIpInformationCallback cb, void *client_data);
+
+/**
+ * Reboot device.
+ * @note \ref RebootDevice is not supported for Mid40/100
+ * @param  handle        device handle.
+ * @param  timeout       reboot device after [timeout] ms.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status RebootDevice(uint8_t handle, uint16_t timeout, CommonCommandCallback cb, void * client_data);
 
 /**
  * @c HubQueryLidarInformation response callback function.
- * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref ResponseStatus for other
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
  * error code.
  * @param handle      device handle.
  * @param response    response from the device.
  * @param client_data user data associated with the command.
  */
-typedef void (*HubQueryLidarInformationCallback)(uint8_t status,
+typedef void (*HubQueryLidarInformationCallback)(livox_status status,
                                                  uint8_t handle,
                                                  HubQueryLidarInformationResponse *response,
                                                  void *client_data);
@@ -281,19 +329,19 @@ typedef void (*HubQueryLidarInformationCallback)(uint8_t status,
  * Query the information of LiDARs connected to the hub.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t HubQueryLidarInformation(HubQueryLidarInformationCallback cb, void *client_data);
+livox_status HubQueryLidarInformation(HubQueryLidarInformationCallback cb, void *client_data);
 
 /**
  * @c HubSetMode response callback function.
- * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref ResponseStatus for other
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
  * error code.
  * @param handle      device handle.
  * @param response    response from the device.
  * @param client_data user data associated with the command.
  */
-typedef void (*HubSetModeCallback)(uint8_t status, uint8_t handle, HubSetModeResponse *response, void *client_data);
+typedef void (*HubSetModeCallback)(livox_status status, uint8_t handle, HubSetModeResponse *response, void *client_data);
 
 /**
  * Set the mode of LiDAR unit connected to the Livox Hub.
@@ -301,47 +349,46 @@ typedef void (*HubSetModeCallback)(uint8_t status, uint8_t handle, HubSetModeRes
  * @param  length        length of req.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t HubSetMode(HubSetModeRequest *req, uint16_t length, HubSetModeCallback cb, void *client_data);
+livox_status HubSetMode(HubSetModeRequest *req, uint16_t length, HubSetModeCallback cb, void *client_data);
 
 /**
  * @c HubQueryLidarStatus response callback function.
- * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref ResponseStatus for other
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
  * error code.
  * @param handle      device handle.
  * @param response    response from the device.
  * @param client_data user data associated with the command.
  */
-typedef void (*HubQueryLidarStatusCallback)(uint8_t status, uint8_t handle, HubQueryLidarStatusResponse *response, void *client_data);
+typedef void (*HubQueryLidarStatusCallback)(livox_status status, uint8_t handle, HubQueryLidarStatusResponse *response, void *client_data);
 
 /**
  * Get the state of LiDAR units connected to the Livox Hub.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t HubQueryLidarStatus(HubQueryLidarStatusCallback cb, void *client_data);
+livox_status HubQueryLidarStatus(HubQueryLidarStatusCallback cb, void *client_data);
 
 /**
  * Toggle the power supply of designated slots.
  * @param  req           request whether to enable or disable the power of designated slots.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-
-uint8_t HubControlSlotPower(HubControlSlotPowerRequest *req, CommonCommandCallback cb, void *client_data);
+livox_status HubControlSlotPower(HubControlSlotPowerRequest *req, CommonCommandCallback cb, void *client_data);
 
 /**
  * @c HubSetExtrinsicParameter response callback function.
- * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref ResponseStatus for other
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
  * error code.
  * @param handle      device handle.
  * @param response    response from the device.
  * @param client_data user data associated with the command.
  */
-typedef void (*HubSetExtrinsicParameterCallback)(uint8_t status,
+typedef void (*HubSetExtrinsicParameterCallback)(livox_status status,
                                                  uint8_t handle,
                                                  HubSetExtrinsicParameterResponse *response,
                                                  void *client_data);
@@ -352,22 +399,22 @@ typedef void (*HubSetExtrinsicParameterCallback)(uint8_t status,
  * @param  length        the request's length.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t HubSetExtrinsicParameter(HubSetExtrinsicParameterRequest *req,
-                                 uint16_t length,
-                                 HubSetExtrinsicParameterCallback cb,
-                                 void *client_data);
+livox_status HubSetExtrinsicParameter(HubSetExtrinsicParameterRequest *req,
+                                      uint16_t length,
+                                      HubSetExtrinsicParameterCallback cb,
+                                      void *client_data);
 
 /**
  * @c HubGetExtrinsicParameter response callback function.
- * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref ResponseStatus for other
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
  * error code.
  * @param handle      device handle.
  * @param response    response from the device.
  * @param client_data user data associated with the command.
  */
-typedef void (*HubGetExtrinsicParameterCallback)(uint8_t status,
+typedef void (*HubGetExtrinsicParameterCallback)(livox_status status,
                                                  uint8_t handle,
                                                  HubGetExtrinsicParameterResponse *response,
                                                  void *client_data);
@@ -376,29 +423,28 @@ typedef void (*HubGetExtrinsicParameterCallback)(uint8_t status,
  * Get extrinsic parameters of LiDAR units connected to the Livox Hub.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t HubGetExtrinsicParameter(HubGetExtrinsicParameterCallback cb, void *client_data);
+livox_status HubGetExtrinsicParameter(HubGetExtrinsicParameterCallback cb, void *client_data);
 
 /**
  * Turn on or off the calculation of extrinsic parameters.
  * @param  enable        the request whether enable or disable calculating the extrinsic parameters.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-
-uint8_t HubExtrinsicParameterCalculation(bool enable, CommonCommandCallback cb, void *client_data);
+livox_status HubExtrinsicParameterCalculation(bool enable, CommonCommandCallback cb, void *client_data);
 
 /**
  * @c HubRainFogSuppress response callback function.
- * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref ResponseStatus for other
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
  * error code.
  * @param handle      device handle.
  * @param response    response from the device.
  * @param client_data user data associated with the command.
  */
-typedef void (*HubRainFogSuppressCallback)(uint8_t status,
+typedef void (*HubRainFogSuppressCallback)(livox_status status,
                                            uint8_t handle,
                                            HubRainFogSuppressResponse *response,
                                            void *client_data);
@@ -409,48 +455,201 @@ typedef void (*HubRainFogSuppressCallback)(uint8_t status,
  * @param  length        the request's length.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t HubRainFogSuppress(HubRainFogSuppressRequest *req,
-                           uint16_t length,
-                           HubRainFogSuppressCallback cb,
-                           void *client_data);
+livox_status HubRainFogSuppress(HubRainFogSuppressRequest *req,
+                                uint16_t length,
+                                HubRainFogSuppressCallback cb,
+                                void *client_data);
 
 /**
 * @c HubQuerySlotPowerStatus response callback function.
-* @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref ResponseStatus for other
+* @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
 * error code.
 * @param handle      device handle.
 * @param response    response from the device.
 * @param client_data user data associated with the command.
 */
-typedef void(*HubQuerySlotPowerStatusCallback)(uint8_t status, uint8_t handle, HubQuerySlotPowerStatusResponse *response, void *client_data);
+typedef void(*HubQuerySlotPowerStatusCallback)(livox_status status, uint8_t handle, HubQuerySlotPowerStatusResponse *response, void *client_data);
 
 /**
 * Get the power supply state of each hub slot.
 * @param  cb            callback for the command.
 * @param  client_data   user data associated with the command.
-* @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+* @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
 */
-uint8_t HubQuerySlotPowerStatus(HubQuerySlotPowerStatusCallback cb, void *client_data);
+livox_status HubQuerySlotPowerStatus(HubQuerySlotPowerStatusCallback cb, void *client_data);
+
+/**
+* @c HubFanControl response callback function.
+* @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
+* error code.
+* @param handle      device handle.
+* @param response    response from the device.
+* @param client_data user data associated with the command.
+*/
+typedef void (*HubFanControlCallback)(livox_status status,
+                                      uint8_t handle,
+                                      HubFanControlResponse *response,
+                                      void *client_data);
+
+/**
+ * Turn on or off the fan of LiDAR unit connected to the Livox Hub.
+ * @param  req           Fan control of LiDAR units.
+ * @param  length        length of req.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status HubFanControl(HubFanControlRequest *req, uint16_t length, HubFanControlCallback cb, void *client_data);
+
+/**
+* @c HubGetFanControl response callback function.
+* @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
+* error code.
+* @param handle      device handle.
+* @param response    response from the device.
+* @param client_data user data associated with the command.
+*/
+typedef void (*HubGetFanStateCallback)(livox_status status,
+                                       uint8_t handle,
+                                       HubGetFanStateResponse *response,
+                                       void *client_data);
+
+/**
+ * Get fan state of LiDAR unit connected to the Livox Hub.
+ * @param  req           Get fan state of LiDAR units.
+ * @param  length        length of req.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status HubGetFanState(HubGetFanStateRequest *req,
+                            uint16_t length,
+                            HubGetFanStateCallback cb,
+                            void *client_data);
+
+/**
+ * @c HubSetPointCloudReturnMode response callback function.
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
+ * error code.
+ * @param handle      device handle.
+ * @param response    response from the device.
+ * @param client_data user data associated with the command.
+ */
+typedef void (*HubSetPointCloudReturnModeCallback)(livox_status status,
+                                                   uint8_t handle,
+                                                   HubSetPointCloudReturnModeResponse *response,
+                                                   void *client_data);
+
+/**
+ * Set point cloud return mode of LiDAR units connected to the Livox Hub.
+ * @param  req           set point cloud return mode of LiDAR units.
+ * @param  length        the request's length.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status HubSetPointCloudReturnMode(HubSetPointCloudReturnModeRequest *req,
+                                        uint16_t length,
+                                        HubSetPointCloudReturnModeCallback cb,
+                                        void *client_data);
+
+/**
+ * @c HubGetPointCloudReturnMode response callback function.
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
+ * error code.
+ * @param handle      device handle.
+ * @param response    response from the device.
+ * @param client_data user data associated with the command.
+ */
+typedef void (*HubGetPointCloudReturnModeCallback)(livox_status status,
+                                                   uint8_t handle,
+                                                   HubGetPointCloudReturnModeResponse *response,
+                                                   void *client_data);
+
+/**
+ * Get point cloud return mode of LiDAR unit connected to the Livox Hub.
+ * @param  req           Get point cloud return mode of LiDAR units.
+ * @param  length        length of req.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status HubGetPointCloudReturnMode(HubGetPointCloudReturnModeRequest *req,
+                                        uint16_t length,
+                                        HubGetPointCloudReturnModeCallback cb,
+                                        void *client_data);
+
+/**
+ * @c HubSetImuPushFrequency response callback function.
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
+ * error code.
+ * @param handle      device handle.
+ * @param response    response from the device.
+ * @param client_data user data associated with the command.
+ */
+typedef void (*HubSetImuPushFrequencyCallback)(livox_status status,
+                                               uint8_t handle,
+                                               HubSetImuPushFrequencyResponse *response,
+                                               void *client_data);
+
+/**
+ * Set IMU push frequency of LiDAR units connected to the Livox Hub.
+ * @param  req           set IMU push frequency of LiDAR units.
+ * @param  length        the request's length.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status HubSetImuPushFrequency(HubSetImuPushFrequencyRequest *req,
+                                    uint16_t length,
+                                    HubSetImuPushFrequencyCallback cb,
+                                    void *client_data);
+
+/**
+ * @c HubGetImuPushFrequency response callback function.
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
+ * error code.
+ * @param handle      device handle.
+ * @param response    response from the device.
+ * @param client_data user data associated with the command.
+ */
+typedef void (*HubGetImuPushFrequencyCallback)(livox_status status,
+                                               uint8_t handle,
+                                               HubGetImuPushFrequencyResponse *response,
+                                               void *client_data);
+
+/**
+ * Get IMU push frequency of LiDAR units connected to the Livox Hub.
+ * @param  req           get IMU push frequency of LiDAR units.
+ * @param  length        the request's length.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status HubGetImuPushFrequency(HubGetImuPushFrequencyRequest *req,
+                                    uint16_t length,
+                                    HubGetImuPushFrequencyCallback cb,
+                                    void *client_data);
 
 /**
  * Start LiDAR sampling.
  * @param  handle        device handle.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t LidarStartSampling(uint8_t handle, CommonCommandCallback cb, void *client_data);
+livox_status LidarStartSampling(uint8_t handle, CommonCommandCallback cb, void *client_data);
 
 /**
  * Stop LiDAR sampling.
  * @param  handle        device handle.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t LidarStopSampling(uint8_t handle, CommonCommandCallback cb, void *client_data);
+livox_status LidarStopSampling(uint8_t handle, CommonCommandCallback cb, void *client_data);
 
 /**
  * Set LiDAR mode.
@@ -460,53 +659,194 @@ uint8_t LidarStopSampling(uint8_t handle, CommonCommandCallback cb, void *client
  * @param  mode          the mode to change.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t LidarSetMode(uint8_t handle, LidarMode mode, CommonCommandCallback cb, void *client_data);
+livox_status LidarSetMode(uint8_t handle, LidarMode mode, CommonCommandCallback cb, void *client_data);
 
 /**
  * Set LiDAR extrinsic parameters.
  * @param  handle        device handle.
- * @param  param         the parameters to write.
+ * @param  req         the parameters to write.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t LidarSetExtrinsicParameter(uint8_t handle,
-                                   LidarSetExtrinsicParameterRequest *req,
-                                   CommonCommandCallback cb,
-                                   void *client_data);
+livox_status LidarSetExtrinsicParameter(uint8_t handle,
+                                        LidarSetExtrinsicParameterRequest *req,
+                                        CommonCommandCallback cb,
+                                        void *client_data);
 
 /**
  * @c LidarGetExtrinsicParameter response callback function.
- * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref ResponseStatus for other
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
  * error code.
  * @param handle      device handle.
  * @param response    response from the device.
  * @param client_data user data associated with the command.
  */
-typedef void (*LidarGetExtrinsicParameterCallback)(uint8_t status,
-                                          uint8_t handle,
-                                          LidarGetExtrinsicParameterResponse *response,
-                                          void *client_data);
+typedef void (*LidarGetExtrinsicParameterCallback)(livox_status status,
+                                                   uint8_t handle,
+                                                   LidarGetExtrinsicParameterResponse *response,
+                                                   void *client_data);
 
 /**
  * Get LiDAR extrinsic parameters.
  * @param  handle        device handle.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t LidarGetExtrinsicParameter(uint8_t handle, LidarGetExtrinsicParameterCallback cb, void *client_data);
+livox_status LidarGetExtrinsicParameter(uint8_t handle, LidarGetExtrinsicParameterCallback cb, void *client_data);
 
 /**
  * Enable and disable the rain/fog suppression.
+ * @note \ref LidarRainFogSuppress only support for Mid40/100.
+ * @param  handle        device handle.
+ * @param  enable        enable and disable the rain/fog suppression.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarRainFogSuppress(uint8_t handle, bool enable, CommonCommandCallback cb, void *client_data);
+
+/**
+ * Turn off the fan.
+ * @note \ref LidarTurnOffFan is not supported for Mid40/100.
  * @param  handle        device handle.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
- * @return kStatusSuccess on successful return, see \ref ResponseStatus for other error code.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
-uint8_t LidarRainFogSuppress(uint8_t handle, bool enable, CommonCommandCallback cb, void *client_data);
+livox_status LidarTurnOffFan(uint8_t handle, CommonCommandCallback cb, void *client_data);
+
+/**
+ * Turn on the fan.
+ * @note \ref LidarTurnOnFan is not supported for Mid40/100.
+ * @param  handle        device handle.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarTurnOnFan(uint8_t handle, CommonCommandCallback cb, void *client_data);
+
+/**
+ * @c LidarGetFanState response callback function.
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
+ * error code.
+ * @param handle      device handle.
+ * @param response    response from the device.
+ * @param client_data user data associated with the command.
+ */
+typedef void (*LidarGetFanStateCallback)(livox_status status,
+                                        uint8_t handle,
+                                        LidarGetFanStateResponse *response,
+                                        void *client_data);
+
+/**
+ * Get state of the fan.
+ * @note \ref LidarGetFanState is not supported for Mid40/100.
+ * @param  handle        device handle.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarGetFanState(uint8_t handle, LidarGetFanStateCallback cb, void * client_data) ;
+
+/**
+ * Set point cloud return mode.
+ * @note \ref LidarSetPointCloudReturnMode is not supported for Mid40/100.
+ * @param  handle        device handle.
+ * @param  mode          point cloud return mode.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarSetPointCloudReturnMode(uint8_t handle, PointCloudReturnMode mode,  CommonCommandCallback cb, void * client_data);
+
+/**
+ * @c LidaGetPointCloudReturnMode response callback function.
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
+ * error code.
+ * @param handle      device handle.
+ * @param response    response from the device.
+ * @param client_data user data associated with the command.
+ */
+typedef void (*LidarGetPointCloudReturnModeCallback)(livox_status status,
+                                                     uint8_t handle,
+                                                     LidarGetPointCloudReturnModeResponse *response,
+                                                     void *client_data);
+
+/**
+ * Get point cloud return mode.
+ * @note \ref LidarGetPointCloudReturnMode is not supported for Mid40/100.
+ * @param  handle        device handle.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarGetPointCloudReturnMode(uint8_t handle, LidarGetPointCloudReturnModeCallback cb, void * client_data);
+
+/**
+ * Set IMU push frequency.
+ * @note \ref LidarSetImuPushFrequency is not supported for Mid40/100.
+ * @param  handle        device handle.
+ * @param  freq          IMU push frequency.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarSetImuPushFrequency(uint8_t handle, ImuFreq freq, CommonCommandCallback cb, void * client_data);
+
+/**
+ * @c LidaGetImuPushFrequency response callback function.
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
+ * error code.
+ * @param handle      device handle.
+ * @param response    response from the device.
+ * @param client_data user data associated with the command.
+ */
+typedef void (*LidarGetImuPushFrequencyCallback)(livox_status status,
+                                                 uint8_t handle,
+                                                 LidarGetImuPushFrequencyResponse *response,
+                                                 void *client_data);
+
+/**
+ * Get IMU push frequency.
+ * @note \ref LidarGetImuPushFrequency is not supported for Mid40/100.
+ * @param  handle        device handle.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarGetImuPushFrequency(uint8_t handle, LidarGetImuPushFrequencyCallback cb, void * client_data);
+
+/**
+ * Set GPRMC formate synchronization time.
+ * @param  handle        device handle.
+ * @param  rmc           GPRMC\GNRMC format data.
+ * @param  rmc_length    lenth of gprmc.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarSetRmcSyncTime(uint8_t handle,
+                                 const char* rmc,
+                                 uint16_t rmc_length,
+                                 CommonCommandCallback cb,
+                                 void *client_data);
+
+/**
+ * Set UTC formate synchronization time.
+ * @param  handle        device handle.
+ * @param  req           UTC format data.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarSetUtcSyncTime(uint8_t handle,
+                                 LidarSetUtcSyncTimeRequest* req,
+                                 CommonCommandCallback cb,
+                                 void *client_data);
 
 #ifdef __cplusplus
 }

@@ -94,13 +94,14 @@ class DeviceManager : public noncopyable {
   void SetDeviceBroadcastCallback(const boost::function<void(const BroadcastDeviceInfo *info)> &cb) {
     broadcast_cb_ = cb;
   }
-  void HubLidarInfomationCallback(uint8_t status, uint8_t handle, HubQueryLidarInformationResponse *response);
+  void HubLidarInfomationCallback(livox_status status, uint8_t handle, HubQueryLidarInformationResponse *response);
   DeviceMode device_mode() { return device_mode_; }
   void BroadcastDevices(const BroadcastDeviceInfo *info);
   void UpdateDevices(const DeviceInfo &device, DeviceEvent type);
   void UpdateDeviceState(uint8_t handle, const HeartbeatResponse &response);
   void GetConnectedDevices(std::vector<DeviceInfo> &devices);
   bool AddListeningDevice(const std::string &broadcast_code, DeviceMode mode, uint8_t &handle);
+  bool IsLidarMid40(uint8_t handle);
 
  private:
   typedef struct _DetailDeviceInfo {
@@ -149,7 +150,7 @@ class DeviceManager : public noncopyable {
 
 DeviceManager &device_manager();
 void DeviceFound(const DeviceInfo &data);
-void DeviceRemove(uint8_t handle);
+void DeviceRemove(uint8_t handle,DeviceEvent device_event);
 
 }  // namespace livox
 
