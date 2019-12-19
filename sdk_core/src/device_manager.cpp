@@ -61,6 +61,7 @@ void DeviceManager::Uninit() {
   connected_cb_ = NULL;
   device_mode_ = kDeviceModeNone;
 
+  lock_guard<mutex> lock(mutex_);
   for (DeviceContainer::iterator ite = devices_.begin(); ite != devices_.end(); ++ite) {
     ite->clear();
   }
@@ -93,8 +94,14 @@ bool DeviceManager::AddDevice(const DeviceInfo &device) {
 
 void DeviceManager::RemoveDevice(uint8_t handle) {
   lock_guard<mutex> lock(mutex_);
-  if (handle < devices_.size()) {
-    devices_[handle].connected = false;
+  if (device_mode_ == kDeviceModeHub) {
+    for (DeviceContainer::iterator ite = devices_.begin(); ite != devices_.end(); ++ite) {
+      ite->connected = false;
+    }
+  } else if (device_mode_ == kDeviceModeLidar) {
+    if (handle < devices_.size()) {
+      devices_[handle].connected = false;
+    }
   }
   LOG_INFO(" Device {} removed ", (uint16_t)handle);
 }
@@ -111,7 +118,7 @@ void DeviceManager::UpdateDevices(const DeviceInfo &device, DeviceEvent type) {
   }
 
   if (device_mode_ == kDeviceModeHub) {
-    if (type == kEventConnect) {
+    if (type == kEventHubConnectionChange) {
       LOG_DEBUG("Send Query lidars command");
       command_handler().SendCommand(kHubDefaultHandle,
                                     kCommandSetHub,
@@ -120,16 +127,23 @@ void DeviceManager::UpdateDevices(const DeviceInfo &device, DeviceEvent type) {
                                     0,
                                     MakeCommandCallback<DeviceManager, HubQueryLidarInformationResponse>(
                                         this, &DeviceManager::HubLidarInfomationCallback));
-    } else if (connected_cb_) {
-      connected_cb_(&device, type);
+    } else {
+      if (connected_cb_) {
+        connected_cb_(&device, type);
+      }
     }
   }
 }
 
-void DeviceManager::HubLidarInfomationCallback(uint8_t status, uint8_t, HubQueryLidarInformationResponse *response) {
+void DeviceManager::HubLidarInfomationCallback(livox_status status, uint8_t, HubQueryLidarInformationResponse *response) {
   if (status == kStatusSuccess) {
     {
       lock_guard<mutex> lock(mutex_);
+      for (DeviceContainer::iterator ite = devices_.begin(); ite != devices_.end(); ++ite) {
+        if (ite->info.handle != kHubDefaultHandle) {
+          ite->connected = false;
+        }
+      }
       for (int i = 0; i < response->count; i++) {
         std::size_t index = (response->device_info_list[i].slot - 1) * 3 + response->device_info_list[i].id - 1;
         if (index < devices_.size()) {
@@ -142,7 +156,7 @@ void DeviceManager::HubLidarInfomationCallback(uint8_t status, uint8_t, HubQuery
       }
     }
     if (connected_cb_) {
-      connected_cb_(&(devices_[kHubDefaultHandle].info), kEventConnect);
+      connected_cb_(&(devices_[kHubDefaultHandle].info), kEventHubConnectionChange);
     }
   } else {
     LOG_ERROR("Failed to query lidars information connected to hub.");
@@ -190,7 +204,6 @@ bool DeviceManager::FindDevice(uint8_t handle, DeviceInfo &info) {
   if (handle >= devices_.size()) {
     return false;
   }
-
   info = devices_[handle].info;
   return true;
 }
@@ -230,17 +243,34 @@ void DeviceManager::UpdateDeviceState(uint8_t handle, const HeartbeatResponse &r
     info.feature = static_cast<LidarFeature>(response.feature);
     update = true;
   }
-  if (info.status.progress != response.error_union.progress) {
-    LOG_INFO(
-        " Update progress {}, device connect {}", (uint16_t)response.error_union.progress, devices_[handle].connected);
-    info.status.progress = response.error_union.progress;
-    update = true;
+  if (response.state == kLidarStateInit) {
+    if (info.status.progress != response.error_union.progress) {
+      LOG_INFO(
+          " Update progress {}, device connect {}", (uint16_t)response.error_union.progress, devices_[handle].connected);
+      info.status.progress = response.error_union.progress;
+      update = true;
+    }
+  } else {
+    if (info.status.status_code.error_code != response.error_union.status_code.error_code) {
+      info.status.status_code.error_code = response.error_union.status_code.error_code;
+      update = true;
+    }
   }
+ 
   if (devices_[handle].connected && update == true) {
     if (connected_cb_) {
       connected_cb_(&info, kEventStateChange);
     }
   }
+}
+
+bool DeviceManager::IsLidarMid40(uint8_t handle) {
+  DeviceInfo lidar_info;
+  bool found = device_manager().FindDevice(handle, lidar_info);
+  if ( found && lidar_info.type == kDeviceTypeLidarMid40) {
+    return true;
+  }
+  return false;
 }
 
 DeviceManager &device_manager() {
@@ -252,17 +282,21 @@ void DeviceFound(const DeviceInfo &lidar_data) {
   device_manager().AddDevice(lidar_data);
   command_handler().AddDevice(lidar_data);
   data_handler().AddDevice(lidar_data);
-  device_manager().UpdateDevices(lidar_data, kEventConnect);
+  if (device_manager().device_mode() == kDeviceModeHub) {
+    device_manager().UpdateDevices(lidar_data, kEventHubConnectionChange);
+  } else {
+    device_manager().UpdateDevices(lidar_data, kEventConnect);
+  }
 }
 
-void DeviceRemove(uint8_t handle) {
+void DeviceRemove(uint8_t handle, DeviceEvent device_event) {
   DeviceInfo info;
   bool found = device_manager().FindDevice(handle, info);
   device_manager().RemoveDevice(handle);
   command_handler().RemoveDevice(handle);
   data_handler().RemoveDevice(handle);
   if (found) {
-    device_manager().UpdateDevices(info, kEventDisconnect);
+    device_manager().UpdateDevices(info, device_event);
   }
 }
 

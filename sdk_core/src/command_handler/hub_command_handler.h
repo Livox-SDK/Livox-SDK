@@ -36,7 +36,7 @@ class HubCommandHandlerImpl : public CommandHandlerImpl {
   void Uninit();
   bool AddDevice(const DeviceInfo &info);
   bool RemoveDevice(uint8_t handle);
-  bool SendCommand(uint8_t handle, const Command &command);
+  livox_status SendCommand(uint8_t handle, const Command &command);
 
  private:
   apr_pool_t *mem_pool_;

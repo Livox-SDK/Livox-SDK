@@ -36,13 +36,36 @@
 typedef enum {
   kConnectStateOff = 0,
   kConnectStateOn = 1,
-  kConnectStateSampling = 2,
+  kConnectStateConfig = 2,
+  kConnectStateSampling = 3,
 } LidarConnectState;
+
+typedef enum {
+  kConfigFan = 1,
+  kConfigReturnMode = 2,
+  kConfigCoordinate = 4,
+  kConfigImuRate = 8
+} LidarConfigCodeBit;
+
+typedef enum {
+  kCoordinateCartesian = 0,
+  kCoordinateSpherical
+} CoordinateType;
+
+typedef struct {
+  bool enable_fan;
+  uint32_t return_mode;
+  uint32_t coordinate;
+  uint32_t imu_rate;
+  volatile uint32_t set_bits;
+  volatile uint32_t get_bits;
+} UserConfig;
 
 typedef struct {
   uint8_t handle;
   LidarConnectState connect_state;
   DeviceInfo info;
+  UserConfig config;
 } LidarDevice;
 
 /**
@@ -65,14 +88,29 @@ class LdsHub {
   LdsHub& operator=(const LdsHub&) = delete;
 
   /** LiDAR data receive callback */
-  static void GetLidarDataCb(uint8_t hub_handle, LivoxEthPacket *data,\
+  static void OnHubDataCb(uint8_t hub_handle, LivoxEthPacket *data,\
                            uint32_t data_num, void *client_data);
   static void OnDeviceBroadcast(const BroadcastDeviceInfo *info);
-  static void OnDeviceChange(const DeviceInfo *info, DeviceEvent type);
-  static void StartSampleCb(uint8_t status, uint8_t handle, uint8_t response, void *clent_data);
-  static void StopSampleCb(uint8_t status, uint8_t handle, uint8_t response, void *clent_data);
-  static void HubQueryLidarInfoCb(uint8_t status, uint8_t handle, \
+  static void OnDeviceInfoChange(const DeviceInfo *info, DeviceEvent type);
+  static void StartSampleCb(livox_status status, uint8_t handle, uint8_t response, void *clent_data);
+  static void StopSampleCb(livox_status status, uint8_t handle, uint8_t response, void *clent_data);
+  static void HubQueryLidarInfoCb(livox_status status, uint8_t handle, \
                                   HubQueryLidarInformationResponse *response, void *client_data);
+  static void HubErrorStatusCb(livox_status status, uint8_t handle, ErrorMessage *message);
+
+  static void ControlFanCb(livox_status status, uint8_t handle, \
+                           uint8_t response, void *clent_data);
+  static void HubSetPointCloudReturnModeCb(livox_status status, uint8_t handle, \
+                                           HubSetPointCloudReturnModeResponse* response,\
+                                           void *clent_data);
+  static void SetCoordinateCb(livox_status status, uint8_t handle, \
+                              uint8_t response, void *clent_data);
+  static void HubSetImuRatePushFrequencyCb(livox_status status, uint8_t handle, \
+                                           HubSetImuPushFrequencyResponse* response,\
+                                           void *clent_data);
+  static void ConfigPointCloudReturnMode(LdsHub* lds_hub);
+  static void ConfigImuPushFrequency(LdsHub* lds_hub);
+  static void ConfigLidarsOfHub(LdsHub* lds_hub);
 
   int AddBroadcastCodeToWhitelist(const char* broadcast_code);
   void AddLocalBroadcastCode(void);
@@ -92,7 +130,6 @@ class LdsHub {
   LidarDevice lidars_[kMaxLidarCount];
   LidarDevice hub_;
   uint32_t receive_packet_count_;
-
 };
 
 #endif

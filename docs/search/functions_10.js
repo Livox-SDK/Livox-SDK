@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['querydeviceinformation',['QueryDeviceInformation',['../livox__sdk_8h.html#a735d2136bc146ccc84b1c2d77ef85399',1,'livox_sdk.h']]]
+  ['querydeviceinformation_2564',['QueryDeviceInformation',['../livox__sdk_8h.html#a839ee9691c83fed5e1419eb83ae94ac7',1,'livox_sdk.h']]]
 ];

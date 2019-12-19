@@ -26,9 +26,9 @@
 #ifdef WIN32
 #include <boost/scoped_array.hpp>
 #include <Winsock2.h>
-#include <Iphlpapi.h>
+#include <iphlpapi.h>
 #include <string>
-#pragma comment(lib,"Iphlpapi.lib")
+#pragma comment(lib,"iphlpapi.lib")
 #pragma comment(lib,"ws2_32.lib")
 #else
 #include <ifaddrs.h>
@@ -36,10 +36,12 @@
 
 namespace livox {
 namespace util {
-apr_socket_t *CreateBindSocket(uint16_t port, apr_pool_t *mem_pool, bool nonblock) {
+apr_socket_t *CreateBindSocket(uint16_t port, apr_pool_t *mem_pool, bool reuse_port, bool nonblock) {
   apr_sockaddr_t *sa = NULL;
   apr_socket_t *s = NULL;
   apr_status_t rv = APR_SUCCESS;
+
+
 
   rv = apr_sockaddr_info_get(&sa, NULL, APR_INET, port, 0, mem_pool);
   if (rv != APR_SUCCESS) {
@@ -49,6 +51,15 @@ apr_socket_t *CreateBindSocket(uint16_t port, apr_pool_t *mem_pool, bool nonbloc
   rv = apr_socket_create(&s, sa->family, SOCK_DGRAM, APR_PROTO_UDP, mem_pool);
   if (rv != APR_SUCCESS) {
     return NULL;
+  }
+
+  if (reuse_port) {
+    rv = apr_socket_opt_set(s, APR_SO_REUSEADDR, 1);
+    if (rv != APR_SUCCESS) {
+      apr_socket_close(s);
+      s = NULL;
+      return NULL;
+    }
   }
 
   rv = apr_socket_bind(s, sa);
@@ -87,7 +98,7 @@ bool GetAdapterState(const IP_ADAPTER_INFO *pAdapter)
   return true;
 }
 
-bool FindLocalIP(const struct sockaddr_in &client_addr, uint32_t &local_ip) {
+bool FindLocalIp(const struct sockaddr_in &client_addr, uint32_t &local_ip) {
   bool found = false;
   ULONG ulOutbufLen = sizeof(IP_ADAPTER_INFO);
   boost::scoped_array<uint8_t> pAdapterInfo(new uint8_t[ulOutbufLen]);
@@ -99,29 +110,25 @@ bool FindLocalIP(const struct sockaddr_in &client_addr, uint32_t &local_ip) {
 
   IP_ADAPTER_INFO *pAdapter = reinterpret_cast<IP_ADAPTER_INFO *>(pAdapterInfo.get());
   if (NO_ERROR == dlRetVal && pAdapter != NULL) {
-    while (pAdapter != NULL) {
-      if (GetAdapterState(pAdapter)) {
-	std::string str_ip = pAdapter->IpAddressList.IpAddress.String;
-	std::string str_mask = pAdapter->IpAddressList.IpMask.String;
-	ULONG host_ip = inet_addr(const_cast<char *>(str_ip.c_str()));
-	ULONG host_mask = inet_addr(const_cast<char *>(str_mask.c_str()));
+    while (GetAdapterState(pAdapter)) {
+      std::string str_ip = pAdapter->IpAddressList.IpAddress.String;
+      std::string str_mask = pAdapter->IpAddressList.IpMask.String;
+      ULONG host_ip = inet_addr(const_cast<char *>(str_ip.c_str()));
+      ULONG host_mask = inet_addr(const_cast<char *>(str_mask.c_str()));
 
-	if ((host_ip & host_mask) ==
-	  (client_addr.sin_addr.S_un.S_addr & host_mask)) {
-	  local_ip = host_ip;
-	  found = true;
-	  break;
-	}
+      if ((host_ip & host_mask) ==
+        (client_addr.sin_addr.S_un.S_addr & host_mask)) {
+        local_ip = host_ip;
+        found = true;
+        break;
       }
-
       pAdapter = pAdapter->Next;
     }
   }
-
   return found;
 }
 #else
-bool FindLocalIP(const struct sockaddr_in &client_addr, uint32_t &local_ip) {
+bool FindLocalIp(const struct sockaddr_in &client_addr, uint32_t &local_ip) {
   struct ifaddrs *if_addrs = NULL, *addrs = NULL;
   if (getifaddrs(&if_addrs) == -1) {
     return false;

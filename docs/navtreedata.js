@@ -1,18 +1,17 @@
 /*
-@ @licstart  The following is the entire license notice for the
+@licstart  The following is the entire license notice for the
 JavaScript code in this file.
 
-Copyright (C) 1997-2017 by Dimitri van Heesch
+Copyright (C) 1997-2019 by Dimitri van Heesch
 
 This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+it under the terms of version 2 of the GNU General Public License as published by
+the Free Software Foundation
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
@@ -53,7 +52,7 @@ var NAVTREE =
     [ "Files", "files.html", [
       [ "File List", "files.html", "files_dup" ],
       [ "File Members", "globals.html", [
-        [ "All", "globals.html", null ],
+        [ "All", "globals.html", "globals_dup" ],
         [ "Functions", "globals_func.html", null ],
         [ "Typedefs", "globals_type.html", null ],
         [ "Enumerations", "globals_enum.html", null ],
@@ -73,10 +72,11 @@ var NAVTREEINDEX =
 "classspdlog_1_1sinks_1_1wincolor__sink.html#a5032da6fc760507134a7d1eff1a20b0a",
 "core_8h.html#a0af13074db7b689a71bd9ae94f8745a1",
 "format_8h.html#a7c29e7b4a54045f13bd664979804998d",
-"log__msg_8h_source.html",
-"spdlog_8h.html#ab1211636fc47637f4dc5ee9a18aa1bce",
-"structfmt_1_1v5_1_1format__handler.html#a717e330f9b9cfa519cbf97e5e2a81add",
-"structfmt_1_1v5_1_1internal_1_1make__integer__sequence.html"
+"livox__sdk_8h.html#a3d29160961c0d85c50ce9bd27ed1f7d0",
+"protocol_8h.html#ab97b5b082d8b27d02cd14daeb8c9807c",
+"struct_hub_rain_fog_suppress_response.html#a189ce6c8031a2d326f6317108c2c8269",
+"structfmt_1_1v5_1_1formatter_3_01_range_t_00_01_char_00_01typename_01std_1_1enable__if_3_01fmt_129f3c94877dea4ec3d39c173a7bba127.html#a56962f9c47a1654f91ebdc5244b81f32",
+"structfmt_1_1v5_1_1internal_1_1no__thousands__sep.html#ad1e7da945143945bd5cd6934620331d9"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

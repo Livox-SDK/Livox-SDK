@@ -71,6 +71,9 @@ class DeviceDiscovery : public noncopyable, IOLoop::IOLoopDelegate {
   static const apr_port_t kCmdPortOffset = 500;
   /** data port number start offset. */
   static const apr_port_t kDataPortOffset = 1000;
+    /** sensor port number start offset. */
+  static const apr_port_t kSensorPortOffset = 1000;
+
 
   static uint16_t port_count;
   apr_socket_t *sock_;

@@ -50,7 +50,8 @@ LdsLidar::LdsLidar() {
 
   memset(lidars_, 0, sizeof(lidars_));
   for (uint32_t i=0; i<kMaxLidarCount; i++) {
-    lidars_[i].handle = kMaxLidarCount;        /** Unallocated state */
+    lidars_[i].handle = kMaxLidarCount; 
+    /** Unallocated state */
     lidars_[i].connect_state = kConnectStateOff;
   }
 }
@@ -146,13 +147,27 @@ void LdsLidar::GetLidarDataCb(uint8_t handle, LivoxEthPacket *data,
   }
 
   if (eth_packet) {
-    lidar_this->data_recveive_count_[handle] += data_num;
-    if (lidar_this->data_recveive_count_[handle] % 10000 == 0) {
+    lidar_this->data_recveive_count_[handle] ++;
+    if (lidar_this->data_recveive_count_[handle] % 100 == 0) {
       printf("receive packet count %d %d\n", handle, lidar_this->data_recveive_count_[handle]);
 
       /** Parsing the timestamp and the point cloud data. */
       uint64_t cur_timestamp = *((uint64_t *)(data->timestamp));
-      LivoxRawPoint *p_point_data = (LivoxRawPoint *)data->data;
+      if(data ->data_type == kCartesian) {
+        LivoxRawPoint *p_point_data = (LivoxRawPoint *)data->data;
+      }else if ( data ->data_type == kSpherical) {
+        LivoxSpherPoint *p_point_data = (LivoxSpherPoint *)data->data;
+      }else if ( data ->data_type == kExtendCartesian) {
+        LivoxExtendRawPoint *p_point_data = (LivoxExtendRawPoint *)data->data;
+      }else if ( data ->data_type == kExtendSpherical) {
+        LivoxExtendSpherPoint *p_point_data = (LivoxExtendSpherPoint *)data->data;
+      }else if ( data ->data_type == kDualExtendCartesian) {
+        LivoxDualExtendRawPoint *p_point_data = (LivoxDualExtendRawPoint *)data->data;
+      }else if ( data ->data_type == kDualExtendSpherical) {
+        LivoxDualExtendSpherPoint *p_point_data = (LivoxDualExtendSpherPoint *)data->data;
+      }else if ( data ->data_type == kImu) {
+        LivoxImuPoint *p_point_data = (LivoxImuPoint *)data->data;
+      }
     }
   }
 }
@@ -182,8 +197,13 @@ void LdsLidar::OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
   result = AddLidarToConnect(info->broadcast_code, &handle);
   if (result == kStatusSuccess && handle < kMaxLidarCount) {
     SetDataCallback(handle, LdsLidar::GetLidarDataCb, (void *)g_lidars);
-    g_lidars->lidars_[handle].handle = handle;
-    g_lidars->lidars_[handle].connect_state = kConnectStateOff;
+    LidarDevice* p_lidar = &(g_lidars->lidars_[handle]);
+    p_lidar->handle = handle;
+    p_lidar->connect_state = kConnectStateOff;
+    p_lidar->config.enable_fan = true;
+    p_lidar->config.return_mode = kStrongestReturn;
+    p_lidar->config.coordinate = kCoordinateCartesian;
+    p_lidar->config.imu_rate = kImuFreq200Hz;
   } else {
     printf("Add lidar to connect is failed : %d %d \n", result, handle);
   }
@@ -207,29 +227,54 @@ void LdsLidar::OnDeviceChange(const DeviceInfo *info, DeviceEvent type) {
       p_lidar->connect_state = kConnectStateOn;
       p_lidar->info = *info;
     }
+    printf("[WARNING] Lidar sn: [%s] Connect!!!\n", info->broadcast_code);
   } else if (type == kEventDisconnect) {
     p_lidar->connect_state = kConnectStateOff;
-    printf("Lidar[%s] disconnect!\n", info->broadcast_code);
+    printf("[WARNING] Lidar sn: [%s] Disconnect!!!\n", info->broadcast_code);
   } else if (type == kEventStateChange) {
     p_lidar->info = *info;
+    printf("[WARNING] Lidar sn: [%s] StateChange!!!\n", info->broadcast_code);
   }
 
   if (p_lidar->connect_state == kConnectStateOn) {
-    printf("Lidar[%s] status_code[%d] working state[%d] feature[%d]\n", \
-           p_lidar->info.broadcast_code,\
-           p_lidar->info.status.status_code,\
-           p_lidar->info.state,\
-           p_lidar->info.feature);
+    printf("Device Working State %d\n", p_lidar->info.state);
+    if (p_lidar->info.state == kLidarStateInit) {
+      printf("Device State Change Progress %u\n", p_lidar->info.status.progress);
+    } else {
+      printf("Device State Error Code 0X%08x\n", p_lidar->info.status.status_code.error_code);
+    }
+    printf("Device feature %d\n", p_lidar->info.feature);
+    SetErrorMessageCallback(handle, LdsLidar::LidarErrorStatusCb);
+
+    /** Config lidar parameter */
     if (p_lidar->info.state == kLidarStateNormal) {
-      LidarStartSampling(handle, LdsLidar::StartSampleCb, g_lidars);
-      p_lidar->connect_state = kConnectStateSampling;
+      if (p_lidar->config.coordinate != 0) {
+        SetSphericalCoordinate(handle, LdsLidar::SetCoordinateCb, g_lidars);
+      } else {
+        SetCartesianCoordinate(handle, LdsLidar::SetCoordinateCb, g_lidars);
+      }
+      p_lidar->config.set_bits |= kConfigCoordinate;
+
+      if (kDeviceTypeLidarMid40 != info->type) {
+        LidarSetPointCloudReturnMode(handle, (PointCloudReturnMode)(p_lidar->config.return_mode),\
+                                     LdsLidar::SetPointCloudReturnModeCb, g_lidars);
+        p_lidar->config.set_bits |= kConfigReturnMode;
+      }
+
+      if (kDeviceTypeLidarMid40 != info->type) {
+        LidarSetImuPushFrequency(handle, (ImuFreq)(p_lidar->config.imu_rate),\
+                                 LdsLidar::SetImuRatePushFrequencyCb, g_lidars);
+        p_lidar->config.set_bits |= kConfigImuRate;
+      }
+
+      p_lidar->connect_state = kConnectStateConfig;
     }
   }
 }
 
 /** Query the firmware version of Livox LiDAR. */
-void LdsLidar::DeviceInformationCb(uint8_t status, uint8_t handle, \
-                         DeviceInformationResponse *ack, void *clent_data) {
+void LdsLidar::DeviceInformationCb(livox_status status, uint8_t handle, \
+                         DeviceInformationResponse *ack, void *client_data) {
   if (status != kStatusSuccess) {
     printf("Device Query Informations Failed : %d\n", status);
   }
@@ -242,10 +287,114 @@ void LdsLidar::DeviceInformationCb(uint8_t status, uint8_t handle, \
   }
 }
 
+/** Callback function of Lidar error message. */
+void LdsLidar::LidarErrorStatusCb(livox_status status, uint8_t handle, ErrorMessage *message) {
+  static uint32_t error_message_count = 0;
+  if (message != NULL) {
+    ++error_message_count;
+    if (0 == (error_message_count % 100)) {
+      printf("handle: %u\n", handle);
+      printf("temp_status : %u\n", message->lidar_error_code.temp_status);
+      printf("volt_status : %u\n", message->lidar_error_code.volt_status);
+      printf("motor_status : %u\n", message->lidar_error_code.motor_status);
+      printf("dirty_warn : %u\n", message->lidar_error_code.dirty_warn);
+      printf("firmware_err : %u\n", message->lidar_error_code.firmware_err);
+      printf("pps_status : %u\n", message->lidar_error_code.device_status);
+      printf("fan_status : %u\n", message->lidar_error_code.fan_status);
+      printf("self_heating : %u\n", message->lidar_error_code.self_heating);
+      printf("ptp_status : %u\n", message->lidar_error_code.ptp_status);
+      printf("time_sync_status : %u\n", message->lidar_error_code.time_sync_status);
+      printf("system_status : %u\n", message->lidar_error_code.system_status);
+    }
+  }
+}
+
+void LdsLidar::ControlFanCb(livox_status status, uint8_t handle, \
+                           uint8_t response, void *client_data) {
+
+}
+
+void LdsLidar::SetPointCloudReturnModeCb(livox_status status, uint8_t handle, \
+                                         uint8_t response, void *client_data) {
+  LdsLidar* lds_lidar = static_cast<LdsLidar *>(client_data);
+
+  if (handle >= kMaxLidarCount) {
+    return;
+  }
+  LidarDevice* p_lidar = &(lds_lidar->lidars_[handle]);
+
+  if (status == kStatusSuccess) {
+    p_lidar->config.set_bits &= ~((uint32_t)(kConfigReturnMode));
+    printf("Set return mode success!\n");
+
+    if (!p_lidar->config.set_bits) {
+      LidarStartSampling(handle, LdsLidar::StartSampleCb, lds_lidar);
+      p_lidar->connect_state = kConnectStateSampling;
+    }
+  } else {
+    LidarSetPointCloudReturnMode(handle, (PointCloudReturnMode)(p_lidar->config.return_mode),\
+                                 LdsLidar::SetPointCloudReturnModeCb, lds_lidar);
+    printf("Set return mode fail, try again!\n");
+  }
+}
+
+void LdsLidar::SetCoordinateCb(livox_status status, uint8_t handle, \
+                               uint8_t response, void *client_data) {
+  LdsLidar* lds_lidar = static_cast<LdsLidar *>(client_data);
+
+  if (handle >= kMaxLidarCount) {
+    return;
+  }
+  LidarDevice* p_lidar = &(lds_lidar->lidars_[handle]);
+
+  if (status == kStatusSuccess) {
+    p_lidar->config.set_bits &= ~((uint32_t)(kConfigCoordinate));
+    printf("Set coordinate success!\n");
+
+    if (!p_lidar->config.set_bits) {
+       LidarStartSampling(handle, LdsLidar::StartSampleCb, lds_lidar);
+       p_lidar->connect_state = kConnectStateSampling;
+    }
+  } else {
+    if (p_lidar->config.coordinate != 0) {
+      SetSphericalCoordinate(handle, LdsLidar::SetCoordinateCb, lds_lidar);
+    } else {
+      SetCartesianCoordinate(handle, LdsLidar::SetCoordinateCb, lds_lidar);
+    }
+
+    printf("Set coordinate fail, try again!\n");
+  }
+}
+
+void LdsLidar::SetImuRatePushFrequencyCb(livox_status status, uint8_t handle, \
+                                         uint8_t response, void *client_data) {
+  LdsLidar* lds_lidar = static_cast<LdsLidar *>(client_data);
+
+  if (handle >= kMaxLidarCount) {
+    return;
+  }
+  LidarDevice* p_lidar = &(lds_lidar->lidars_[handle]);
+
+  if (status == kStatusSuccess) {
+    p_lidar->config.set_bits &= ~((uint32_t)(kConfigImuRate));
+    printf("Set imu rate success!\n");
+
+    if (!p_lidar->config.set_bits) {
+      LidarStartSampling(handle, LdsLidar::StartSampleCb, lds_lidar);
+      p_lidar->connect_state = kConnectStateSampling;
+    }
+
+  } else {
+    LidarSetImuPushFrequency(handle, (ImuFreq)(p_lidar->config.imu_rate),\
+                             LdsLidar::SetImuRatePushFrequencyCb, lds_lidar);
+    printf("Set imu rate fail, try again!\n");
+  }
+}
+
 /** Callback function of starting sampling. */
-void LdsLidar::StartSampleCb(uint8_t status, uint8_t handle, \
-                             uint8_t response, void *clent_data) {
-  LdsLidar* lds_lidar = static_cast<LdsLidar *>(clent_data);
+void LdsLidar::StartSampleCb(livox_status status, uint8_t handle, \
+                             uint8_t response, void *client_data) {
+  LdsLidar* lds_lidar = static_cast<LdsLidar *>(client_data);
 
   if (handle >= kMaxLidarCount) {
     return;
@@ -268,8 +417,8 @@ void LdsLidar::StartSampleCb(uint8_t status, uint8_t handle, \
 }
 
 /** Callback function of stopping sampling. */
-void LdsLidar::StopSampleCb(uint8_t status, uint8_t handle, \
-                            uint8_t response, void *clent_data) {
+void LdsLidar::StopSampleCb(livox_status status, uint8_t handle, \
+                            uint8_t response, void *client_data) {
 }
 
 /** Add broadcast code to whitelist */

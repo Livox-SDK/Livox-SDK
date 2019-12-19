@@ -31,6 +31,9 @@
 #include "livox_def.h"
 #include "livox_sdk.h"
 
+# define HMS_PARSE_BUF (128)
+# define YY_PARSE_BUF (128)
+
 using std::pair;
 using std::vector;
 using namespace livox;
@@ -43,7 +46,7 @@ void SetBroadcastCallback(DeviceBroadcastCallback cb) {
   device_manager().SetDeviceBroadcastCallback(cb);
 }
 
-uint8_t AddHubToConnect(const char *broadcast_code, uint8_t *handle) {
+livox_status AddHubToConnect(const char *broadcast_code, uint8_t *handle) {
   bool result = device_manager().AddListeningDevice(broadcast_code, kDeviceModeHub, *handle);
   if (result) {
     return kStatusSuccess;
@@ -52,7 +55,7 @@ uint8_t AddHubToConnect(const char *broadcast_code, uint8_t *handle) {
   }
 }
 
-uint8_t AddLidarToConnect(const char *broadcast_code, uint8_t *handle) {
+livox_status AddLidarToConnect(const char *broadcast_code, uint8_t *handle) {
   bool result = device_manager().AddListeningDevice(broadcast_code, kDeviceModeLidar, *handle);
   if (result) {
     return kStatusSuccess;
@@ -61,7 +64,7 @@ uint8_t AddLidarToConnect(const char *broadcast_code, uint8_t *handle) {
   }
 }
 
-uint8_t GetConnectedDevices(DeviceInfo *devices, uint8_t *size) {
+livox_status GetConnectedDevices(DeviceInfo *devices, uint8_t *size) {
   if (devices == NULL || size == NULL) {
     return kStatusFailure;
   }
@@ -79,284 +82,668 @@ void SetDataCallback(uint8_t handle, DataCallback cb, void *client_data) {
   data_handler().AddDataListener(handle, cb, client_data);
 }
 
-uint8_t DeviceSampleControl(uint8_t handle, bool enable, CommonCommandCallback cb, void *data) {
+livox_status DeviceSampleControl(uint8_t handle, bool enable, CommonCommandCallback cb, void *client_data) {
   uint8_t req = enable;
-  bool result = command_handler().SendCommand(handle,
-                                              kCommandSetGeneral,
-                                              kCommandIDGeneralControlSample,
-                                              &req,
-                                              sizeof(req),
-                                              MakeCommandCallback<uint8_t>(cb, data));
-  return result ? kStatusSuccess : kStatusFailure;
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetGeneral,
+                                                      kCommandIDGeneralControlSample,
+                                                      &req,
+                                                      sizeof(req),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
 }
 
-uint8_t LidarStartSampling(uint8_t handle, CommonCommandCallback cb, void *data) {
+livox_status LidarFanControl(uint8_t handle, bool enable, CommonCommandCallback cb, void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeLidar
+      || device_manager().IsLidarMid40(handle)) {
+    return kStatusNotSupported;
+  }
+  uint8_t req = static_cast<uint8_t>(enable);
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetLidar,
+                                                      kCommandIDLidarControlFan,
+                                                      &req,
+                                                      sizeof(req),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
+}
+
+livox_status SetDeviceIp(uint8_t handle, SetDeviceIpExtendModeRequest *req, CommonCommandCallback cb, void *client_data) {
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetGeneral,
+                                                      kCommandIDGeneralConfigureStaticDynamicIp,
+                                                      (uint8_t*)req,
+                                                      sizeof(*req),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
+}
+
+bool ChecksumRmc(const char* buff_begin, const char* buff_end) {
+  //checksum $GPRMC/$GNRMC format : *hh
+  const uint8_t head_size = strlen("$");
+  const uint8_t tail_size = strlen("hh");
+  char tail[3] = { 0 };
+  uint32_t tail_num = 0;
+  uint8_t crc = 0;
+  buff_begin += head_size;
+
+  for ( ; buff_begin < buff_end; buff_begin++) {
+    if (*buff_begin == '*') {
+      if (buff_begin + tail_size <= buff_end) {
+        strncpy(tail, &buff_begin[1], tail_size);
+        sscanf(tail, "%x", &tail_num);
+        crc ^= (uint8_t)tail_num;
+        if (crc == 0) {
+          return true;
+        }
+        break;
+      }
+    }
+    crc ^= *buff_begin;
+  }
+  return false;
+}
+
+bool ParseRmcTime(const char* rmc, uint16_t rmc_len, LidarSetUtcSyncTimeRequest* utc_time_req) {
+  const char* rmc_begin = strstr(rmc, "$GPRMC");
+  if (rmc_begin == NULL) {
+    rmc_begin = strstr(rmc, "$GNRMC");
+  }
+  if (rmc_begin == NULL) {
+    return false;
+  }
+  if (!ChecksumRmc(rmc_begin, rmc + rmc_len)) {
+    return false;
+  }
+
+  char utc_hms_buff[HMS_PARSE_BUF] = { 0 };
+  char utc_yy_buff[YY_PARSE_BUF] = { 0 };
+  int hour = 0, minute = 0, second = 0, millisecond = 0;
+
+  memset(utc_time_req, 0, sizeof(LidarSetUtcSyncTimeRequest));
+
+  if (4 != sscanf(rmc_begin,
+                  "$G%*[NP]RMC,%[^,],%*C,%*f,%*C,%*f,%*C,%*f,%*f,%2hhu%2hhu%[^,],%*f,",
+                  &utc_hms_buff[0],
+                  &(utc_time_req->day),
+                  &(utc_time_req->month),
+                  &utc_yy_buff[0])) {
+    return false;
+  }
+
+  int time_buff_size = strlen(utc_yy_buff);
+  uint8_t temp_time = 0;
+  switch (time_buff_size) {
+    case sizeof("yyyy")-1:
+      if (strncmp(utc_yy_buff, "2000", strlen("2000")) < 0) {
+        return false;
+      }
+      if (1 != sscanf(utc_yy_buff, "%*C%*C%2hhu", &(utc_time_req->year))) {
+        return false;
+      }
+      temp_time = utc_time_req->day;
+      utc_time_req->day = utc_time_req->month;
+      utc_time_req->month = temp_time;
+      break;
+    case sizeof("yy")-1:
+      if (1 != sscanf(utc_yy_buff, "%2hhu", &(utc_time_req->year))) {
+        return false;
+      }
+      break;
+    default:
+      return false;
+  }
+
+  time_buff_size = strlen(utc_hms_buff);
+  switch (time_buff_size) {
+    case sizeof("hhmmss")-1:
+      if (3 != sscanf(utc_hms_buff, "%2d%2d%2d", &hour, &minute, &second)) {
+        return false;
+      }
+      break;
+    case sizeof("hhmmss.s")-1:
+    case sizeof("hhmmss.ss")-1:
+    case sizeof("hhmmss.sss")-1:
+      if (4 != sscanf(utc_hms_buff, "%2d%2d%2d.%2d", &hour, &minute, &second, &millisecond)) {
+        return false;
+      }
+      break;
+    default:
+      return false;
+  }
+  utc_time_req->mircrosecond = (minute * 60 * 1000 + second * 1000 + millisecond) * 1000;
+  return true;
+}
+
+livox_status LidarStartSampling(uint8_t handle, CommonCommandCallback cb, void *client_data) {
   if (device_manager().device_mode() != kDeviceModeLidar) {
     return kStatusNotSupported;
   }
-  return DeviceSampleControl(handle, true, cb, data);
+  return DeviceSampleControl(handle, true, cb, client_data);
 }
 
-uint8_t LidarStopSampling(uint8_t handle, CommonCommandCallback cb, void *data) {
+livox_status LidarStopSampling(uint8_t handle, CommonCommandCallback cb, void *client_data) {
   if (device_manager().device_mode() != kDeviceModeLidar) {
     return kStatusNotSupported;
   }
-  return DeviceSampleControl(handle, false, cb, data);
+  return DeviceSampleControl(handle, false, cb, client_data);
 }
 
-uint8_t HubStartSampling(CommonCommandCallback cb, void *client_data) {
+livox_status HubStartSampling(CommonCommandCallback cb, void *client_data) {
   if (device_manager().device_mode() != kDeviceModeHub) {
     return kStatusNotSupported;
   }
   return DeviceSampleControl(kHubDefaultHandle, true, cb, client_data);
 }
 
-uint8_t HubStopSampling(CommonCommandCallback cb, void *client_data) {
+livox_status HubStopSampling(CommonCommandCallback cb, void *client_data) {
   if (device_manager().device_mode() != kDeviceModeHub) {
     return kStatusNotSupported;
   }
   return DeviceSampleControl(kHubDefaultHandle, false, cb, client_data);
 }
 
-uint8_t HubGetLidarHandle(uint8_t slot, uint8_t id) {
+livox_status HubGetLidarHandle(uint8_t slot, uint8_t id) {
   return (slot - 1) * 3 + id - 1;
 }
 
-uint8_t QueryDeviceInformation(uint8_t handle, DeviceInformationCallback cb, void *data) {
-  bool result = command_handler().SendCommand(handle,
-                                              kCommandSetGeneral,
-                                              kCommandIDGeneralDeviceInfo,
-                                              NULL,
-                                              0,
-                                              MakeCommandCallback<DeviceInformationResponse>(cb, data));
-  return result ? kStatusSuccess : kStatusFailure;
+livox_status QueryDeviceInformation(uint8_t handle, DeviceInformationCallback cb, void *client_data) {
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetGeneral,
+                                                      kCommandIDGeneralDeviceInfo,
+                                                      NULL,
+                                                      0,
+                                                      MakeCommandCallback<DeviceInformationResponse>(cb, client_data));
+  return result;
 }
 
-uint8_t SetCartesianCoordinate(uint8_t handle, CommonCommandCallback cb, void *client_data) {
+
+livox_status DisconnectDevice(uint8_t handle, CommonCommandCallback cb, void *client_data) {
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetGeneral,
+                                                      kCommandIDGeneralDisconnect,
+                                                      NULL,
+                                                      0,
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
+}
+
+livox_status SetCartesianCoordinate(uint8_t handle, CommonCommandCallback cb, void *client_data) {
   uint8_t req = 0;
-  bool result = command_handler().SendCommand(handle,
-                                              kCommandSetGeneral,
-                                              kCommandIDGeneralCoordinateSystem,
-                                              &req,
-                                              sizeof(req),
-                                              MakeCommandCallback<uint8_t>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetGeneral,
+                                                      kCommandIDGeneralCoordinateSystem,
+                                                      &req,
+                                                      sizeof(req),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
 }
 
-uint8_t SetSphericalCoordinate(uint8_t handle, CommonCommandCallback cb, void *client_data) {
+livox_status SetSphericalCoordinate(uint8_t handle, CommonCommandCallback cb, void *client_data) {
   uint8_t req = 1;
-  bool result = command_handler().SendCommand(handle,
-                                              kCommandSetGeneral,
-                                              kCommandIDGeneralCoordinateSystem,
-                                              &req,
-                                              sizeof(req),
-                                              MakeCommandCallback<uint8_t>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetGeneral,
+                                                      kCommandIDGeneralCoordinateSystem,
+                                                      &req,
+                                                      sizeof(req),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
 }
 
-uint8_t SetErrorMessageCallback(uint8_t handle, ErrorMessageCallback cb) {
-  bool result = command_handler().RegisterPush(
+livox_status SetErrorMessageCallback(uint8_t handle, ErrorMessageCallback cb) {
+  livox_status result = command_handler().RegisterPush(
       handle, kCommandSetGeneral, kCommandIDGeneralPushAbnormalState, MakeMessageCallback<ErrorMessage>(cb));
-  return result ? kStatusSuccess : kStatusFailure;
+  return result;
 }
 
-uint8_t SetStaticDynamicIP(uint8_t handle,
-                           SetDeviceIPModeRequest *req,
-                           CommonCommandCallback cb,
-                           void *client_data) {
-  bool result = command_handler().SendCommand(handle,
-                                              kCommandSetGeneral,
-                                              kCommandIDGeneralConfigureStaticDynamicIP,
-                                              (uint8_t *)req,
-                                              sizeof(*req),
-                                              MakeCommandCallback<uint8_t>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
+livox_status SetStaticDynamicIP(uint8_t handle,
+                                SetDeviceIPModeRequest *req,
+                                CommonCommandCallback cb,
+                                void *client_data) {
+  if(device_manager().device_mode() == kDeviceModeLidar
+     && !device_manager().IsLidarMid40(handle)) {
+    return kStatusNotSupported;
+  }
+  SetDeviceIpExtendModeRequest ext_req;
+  ext_req.ip_mode = req->ip_mode;
+  ext_req.ip_addr = req->ip_addr;
+  uint8_t net_mask[4] = {255, 255, 255, 0};
+  memcpy(&ext_req.net_mask, net_mask, 4);
+  uint8_t gw_addr[4] = {192, 168, 1, 1};
+  memcpy(&ext_req.gw_addr, gw_addr, 4);
+  return SetDeviceIp(handle, &ext_req, cb, client_data);
 }
 
-uint8_t GetDeviceIPInformation(uint8_t handle, GetDeviceIPInformationCallback cb, void *client_data) {
-  bool result = command_handler().SendCommand(handle,
-                                              kCommandSetGeneral,
-                                              kCommandIDGeneralGetDeviceIPInformation,
-                                              NULL,
-                                              0,
-                                              MakeCommandCallback<GetDeviceIPModeResponse>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
+livox_status SetDynamicIp(uint8_t handle, CommonCommandCallback cb, void *client_data) {
+  SetDeviceIpExtendModeRequest req;
+  req.ip_mode = kLidarDynamicIpMode;  
+  return SetDeviceIp(handle, &req, cb, client_data);
 }
 
-uint8_t LidarSetMode(uint8_t handle, LidarMode mode, CommonCommandCallback cb, void *client_data) {
+livox_status SetStaticIp(uint8_t handle,
+                         SetStaticDeviceIpModeRequest *req,
+                         CommonCommandCallback cb,
+                         void *client_data) {
+  SetDeviceIpExtendModeRequest static_ip_req = { kLidarStaticIpMode,req->ip_addr,req->net_mask,req->gw_addr};
+  return SetDeviceIp(handle, &static_ip_req, cb, client_data);
+}
+
+livox_status GetDeviceIpInformation(uint8_t handle, GetDeviceIpInformationCallback cb, void *client_data) {
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetGeneral,
+                                                      kCommandIDGeneralGetDeviceIpInformation,
+                                                      NULL,
+                                                      0,
+                                                      MakeCommandCallback<GetDeviceIpModeResponse>(cb, client_data));
+  return result;
+}
+
+livox_status RebootDevice(uint8_t handle, uint16_t timeout, CommonCommandCallback cb, void * client_data) {
+  if(device_manager().IsLidarMid40(handle)) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetGeneral,
+                                                      kCommandIDGeneralRebootDevice,
+                                                      (uint8_t *)(&timeout),
+                                                      sizeof(timeout),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
+}
+
+livox_status LidarSetMode(uint8_t handle, LidarMode mode, CommonCommandCallback cb, void *client_data) {
   if (device_manager().device_mode() != kDeviceModeLidar) {
     return kStatusNotSupported;
   }
   uint8_t req = static_cast<uint8_t>(mode);
-  bool result = command_handler().SendCommand(handle,
-                                              kCommandSetLidar,
-                                              kCommandIDLidarSetMode,
-                                              &req,
-                                              sizeof(req),
-                                              MakeCommandCallback<uint8_t>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetLidar,
+                                                      kCommandIDLidarSetMode,
+                                                      &req,
+                                                      sizeof(req),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
 }
 
-uint8_t LidarSetExtrinsicParameter(uint8_t handle,
-                                   LidarSetExtrinsicParameterRequest *req,
-                                   CommonCommandCallback cb,
-                                   void *client_data) {
+livox_status LidarSetExtrinsicParameter(uint8_t handle,
+                                        LidarSetExtrinsicParameterRequest *req,
+                                        CommonCommandCallback cb,
+                                        void *client_data) {
   if (device_manager().device_mode() != kDeviceModeLidar) {
     return kStatusNotSupported;
   }
-  bool result = command_handler().SendCommand(handle,
-                                              kCommandSetLidar,
-                                              kCommandIDLidarSetExtrinsicParameter,
-                                              (uint8_t *)req,
-                                              sizeof(*req),
-                                              MakeCommandCallback<uint8_t>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetLidar,
+                                                      kCommandIDLidarSetExtrinsicParameter,
+                                                      (uint8_t *)req,
+                                                      sizeof(*req),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
 }
 
-uint8_t LidarGetExtrinsicParameter(uint8_t handle, LidarGetExtrinsicParameterCallback cb, void *client_data) {
+livox_status LidarGetExtrinsicParameter(uint8_t handle, LidarGetExtrinsicParameterCallback cb, void *client_data) {
   if (device_manager().device_mode() != kDeviceModeLidar) {
     return kStatusNotSupported;
   }
-  bool result = command_handler().SendCommand(handle,
-                                              kCommandSetLidar,
-                                              kCommandIDLidarGetExtrinsicParameter,
-                                              NULL,
-                                              0,
-                                              MakeCommandCallback<LidarGetExtrinsicParameterResponse>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetLidar,
+                                                      kCommandIDLidarGetExtrinsicParameter,
+                                                      NULL,
+                                                      0,
+                                                      MakeCommandCallback<LidarGetExtrinsicParameterResponse>(cb, client_data));
+  return result;
 }
 
-uint8_t LidarRainFogSuppress(uint8_t handle, bool enable, CommonCommandCallback cb, void *data) {
-  uint8_t req = static_cast<uint8_t>(enable);
-  bool result = command_handler().SendCommand(handle,
-                                              kCommandSetLidar,
-                                              kCommandIDLidarControlRainFogSuppression,
-                                              &req,
-                                              sizeof(req),
-                                              MakeCommandCallback<uint8_t>(cb, data));
-  return result ? kStatusSuccess : kStatusFailure;
-}
-
-uint8_t HubQueryLidarInformation(HubQueryLidarInformationCallback cb, void *client_data) {
-  if (device_manager().device_mode() != kDeviceModeHub) {
-    return kStatusNotSupported;
-  }
-  bool result = command_handler().SendCommand(kHubDefaultHandle,
-                                              kCommandSetHub,
-                                              kCommandIDHubQueryLidarInformation,
-                                              NULL,
-                                              0,
-                                              MakeCommandCallback<HubQueryLidarInformationResponse>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
-}
-
-uint8_t HubSetMode(HubSetModeRequest *req, uint16_t length, HubSetModeCallback cb, void *client_data) {
-  if (device_manager().device_mode() != kDeviceModeHub) {
-    return kStatusNotSupported;
-  }
-  bool result = command_handler().SendCommand(kHubDefaultHandle,
-                                              kCommandSetHub,
-                                              kCommandIDHubSetMode,
-                                              (uint8_t *)req,
-                                              length,
-                                              MakeCommandCallback<HubSetModeResponse>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
-}
-
-uint8_t HubControlSlotPower(HubControlSlotPowerRequest *req, CommonCommandCallback cb, void *client_data) {
-  if (device_manager().device_mode() != kDeviceModeHub) {
-    return kStatusNotSupported;
-  }
-  bool result = command_handler().SendCommand(kHubDefaultHandle,
-                                              kCommandSetHub,
-                                              kCommandIDHubControlSlotPower,
-                                              (uint8_t *)req,
-                                              sizeof(*req),
-                                              MakeCommandCallback<uint8_t>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
-}
-
-uint8_t HubSetExtrinsicParameter(HubSetExtrinsicParameterRequest *req,
-                                 uint16_t length,
-                                 HubSetExtrinsicParameterCallback cb,
-                                 void *client_data) {
-  if (device_manager().device_mode() != kDeviceModeHub) {
-    return kStatusNotSupported;
-  }
-  bool result = command_handler().SendCommand(kHubDefaultHandle,
-                                              kCommandSetHub,
-                                              kCommandIDHubSetExtrinsicParameter,
-                                              (uint8_t *)req,
-                                              length,
-                                              MakeCommandCallback<HubSetExtrinsicParameterResponse>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
-}
-
-uint8_t HubGetExtrinsicParameter(HubGetExtrinsicParameterCallback cb, void *client_data) {
-  if (device_manager().device_mode() != kDeviceModeHub) {
-    return kStatusNotSupported;
-  }
-  bool result = command_handler().SendCommand(kHubDefaultHandle,
-                                              kCommandSetHub,
-                                              kCommandIDHubGetExtrinsicParameter,
-                                              NULL,
-                                              0,
-                                              MakeCommandCallback<HubGetExtrinsicParameterResponse>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
-}
-
-uint8_t HubQueryLidarStatus(HubQueryLidarStatusCallback cb, void *client_data) {
-  if (device_manager().device_mode() != kDeviceModeHub) {
-    return kStatusNotSupported;
-  }
-  bool result = command_handler().SendCommand(kHubDefaultHandle,
-                                              kCommandSetHub,
-                                              kCommandIDHubQueryLidarDeviceStatus,
-                                              NULL,
-                                              0,
-                                              MakeCommandCallback<HubQueryLidarStatusResponse>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
-}
-
-uint8_t HubExtrinsicParameterCalculation(bool enable, CommonCommandCallback cb, void *client_data) {
-  if (device_manager().device_mode() != kDeviceModeHub) {
+livox_status LidarRainFogSuppress(uint8_t handle, bool enable, CommonCommandCallback cb, void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeLidar 
+      || !device_manager().IsLidarMid40(handle)) {
     return kStatusNotSupported;
   }
   uint8_t req = static_cast<uint8_t>(enable);
-  bool result = command_handler().SendCommand(kHubDefaultHandle,
-                                              kCommandSetHub,
-                                              kCommandIDHubExtrinsicParameterCalculation,
-                                              &req,
-                                              sizeof(req),
-                                              MakeCommandCallback<uint8_t>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetLidar,
+                                                      kCommandIDLidarControlRainFogSuppression,
+                                                      &req,
+                                                      sizeof(req),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
 }
 
-uint8_t HubRainFogSuppress(HubRainFogSuppressRequest *req,
-                           uint16_t length,
-                           HubRainFogSuppressCallback cb,
+livox_status LidarTurnOnFan(uint8_t handle, CommonCommandCallback cb, void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeLidar
+      || device_manager().IsLidarMid40(handle)) {
+    return kStatusNotSupported;
+  }
+  return LidarFanControl(handle, true, cb, client_data);
+}
+
+livox_status LidarTurnOffFan(uint8_t handle, CommonCommandCallback cb, void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeLidar
+      || device_manager().IsLidarMid40(handle)) {
+    return kStatusNotSupported;
+  }
+  return LidarFanControl(handle, false, cb, client_data);
+}
+
+livox_status LidarGetFanState(uint8_t handle, LidarGetFanStateCallback cb, void * data) {
+  if (device_manager().device_mode() != kDeviceModeLidar
+      || device_manager().IsLidarMid40(handle)) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetLidar,
+                                                      kCommandIDLidarGetFanState,
+                                                      NULL,
+                                                      0,
+                                                      MakeCommandCallback<LidarGetFanStateResponse>(cb, data));
+  return result;
+}
+
+livox_status LidarSetPointCloudReturnMode(uint8_t handle, PointCloudReturnMode mode,  CommonCommandCallback cb, void * data) {
+  if (device_manager().device_mode() != kDeviceModeLidar
+      || device_manager().IsLidarMid40(handle)) {
+    return kStatusNotSupported;
+  }
+  uint8_t req = static_cast<uint8_t>(mode);
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetLidar,
+                                                      kCommandIDLidarSetPointCloudReturnMode,
+                                                      &req,
+                                                      sizeof(req),
+                                                      MakeCommandCallback<uint8_t>(cb, data));
+   return result;
+}
+
+livox_status LidarGetPointCloudReturnMode(uint8_t handle, LidarGetPointCloudReturnModeCallback cb, void * client_data) {
+  if (device_manager().device_mode() != kDeviceModeLidar
+      || device_manager().IsLidarMid40(handle)) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetLidar,
+                                                      kCommandIDLidarGetPointCloudReturnMode,
+                                                      NULL,
+                                                      0,
+                                                      MakeCommandCallback<LidarGetPointCloudReturnModeResponse>(cb, client_data));
+   return result;
+}
+
+livox_status LidarSetImuPushFrequency(uint8_t handle, ImuFreq freq, CommonCommandCallback cb, void * client_data) {
+  if (device_manager().device_mode() != kDeviceModeLidar
+      || device_manager().IsLidarMid40(handle)) {
+    return kStatusNotSupported;
+  }
+  uint8_t req = static_cast<uint8_t>(freq);
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetLidar,
+                                                      kCommandIDLidarSetImuPushFrequency,
+                                                      &req,
+                                                      sizeof(req),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
+}
+
+livox_status LidarGetImuPushFrequency(uint8_t handle, LidarGetImuPushFrequencyCallback cb, void * data) {
+  if (device_manager().device_mode() != kDeviceModeLidar
+      || device_manager().IsLidarMid40(handle)) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetLidar,
+                                                      kCommandIDLidarGetImuPushFrequency,
+                                                      NULL,
+                                                      0,
+                                                      MakeCommandCallback<LidarGetImuPushFrequencyResponse>(cb, data));
+  return result;
+}
+
+livox_status HubQueryLidarInformation(HubQueryLidarInformationCallback cb, void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubQueryLidarInformation,
+                                                      NULL,
+                                                      0,
+                                                      MakeCommandCallback<HubQueryLidarInformationResponse>(cb, client_data));
+  return result;
+}
+
+livox_status HubSetMode(HubSetModeRequest *req, uint16_t length, HubSetModeCallback cb, void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubSetMode,
+                                                      (uint8_t *)req,
+                                                      length,
+                                                      MakeCommandCallback<HubSetModeResponse>(cb, client_data));
+  return result;
+}
+
+livox_status HubControlSlotPower(HubControlSlotPowerRequest *req, CommonCommandCallback cb, void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubControlSlotPower,
+                                                      (uint8_t *)req,
+                                                      sizeof(*req),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
+}
+
+livox_status HubSetExtrinsicParameter(HubSetExtrinsicParameterRequest *req,
+                                      uint16_t length,
+                                      HubSetExtrinsicParameterCallback cb,
+                                      void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubSetExtrinsicParameter,
+                                                      (uint8_t *)req,
+                                                      length,
+                                                      MakeCommandCallback<HubSetExtrinsicParameterResponse>(cb, client_data));
+  return result;
+}
+
+livox_status HubGetExtrinsicParameter(HubGetExtrinsicParameterCallback cb, void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubGetExtrinsicParameter,
+                                                      NULL,
+                                                      0,
+                                                      MakeCommandCallback<HubGetExtrinsicParameterResponse>(cb, client_data));
+  return result;
+}
+
+livox_status HubQueryLidarStatus(HubQueryLidarStatusCallback cb, void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubQueryLidarDeviceStatus,
+                                                      NULL,
+                                                      0,
+                                                      MakeCommandCallback<HubQueryLidarStatusResponse>(cb, client_data));
+  return result;
+}
+
+livox_status HubExtrinsicParameterCalculation(bool enable, CommonCommandCallback cb, void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  uint8_t req = static_cast<uint8_t>(enable);
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubExtrinsicParameterCalculation,
+                                                      &req,
+                                                      sizeof(req),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
+}
+
+livox_status HubRainFogSuppress(HubRainFogSuppressRequest *req,
+                                uint16_t length,
+                                HubRainFogSuppressCallback cb,
+                                void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubRainFogSuppression,
+                                                      (uint8_t *)req,
+                                                      length,
+                                                      MakeCommandCallback<HubRainFogSuppressResponse>(cb, client_data));
+  return result;
+}
+
+livox_status HubQuerySlotPowerStatus(HubQuerySlotPowerStatusCallback cb, void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubQuerySlotPowerStatus,
+                                                      NULL,
+                                                      0,
+                                                      MakeCommandCallback<HubQuerySlotPowerStatusResponse>(cb, client_data));
+  return result;
+}
+
+livox_status HubFanControl(HubFanControlRequest *req, 
+                           uint16_t length, 
+                           HubFanControlCallback cb, 
                            void *client_data) {
   if (device_manager().device_mode() != kDeviceModeHub) {
     return kStatusNotSupported;
   }
-  bool result = command_handler().SendCommand(kHubDefaultHandle,
-                                              kCommandSetHub,
-                                              kCommandIDHubRainFogSuppression,
-                                              (uint8_t *)req,
-                                              length,
-                                              MakeCommandCallback<HubRainFogSuppressResponse>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubControlFan,
+                                                      (uint8_t *)req,
+                                                      length,
+                                                      MakeCommandCallback<HubFanControlResponse>(cb, client_data));
+  return result;
 }
 
-uint8_t HubQuerySlotPowerStatus(HubQuerySlotPowerStatusCallback cb, void *client_data) {
+livox_status HubGetFanState(HubGetFanStateRequest *req, 
+                            uint16_t length, 
+                            HubGetFanStateCallback cb, 
+                            void *client_data) {
   if (device_manager().device_mode() != kDeviceModeHub) {
     return kStatusNotSupported;
   }
-  bool result = command_handler().SendCommand(kHubDefaultHandle,
-                                              kCommandSetHub,
-                                              kCommandIDHubQuerySlotPowerStatus,
-                                              NULL,
-                                              0,
-                                              MakeCommandCallback<HubQuerySlotPowerStatusResponse>(cb, client_data));
-  return result ? kStatusSuccess : kStatusFailure;
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubGetFanState,
+                                                      (uint8_t *)req,
+                                                      length,
+                                                      MakeCommandCallback<HubGetFanStateResponse>(cb, client_data));
+  return result;
+}
+
+livox_status HubSetPointCloudReturnMode(HubSetPointCloudReturnModeRequest *req, 
+                                        uint16_t length, 
+                                        HubSetPointCloudReturnModeCallback cb, 
+                                        void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubSetPointCloudReturnMode,
+                                                      (uint8_t *)req,
+                                                      length,
+                                                      MakeCommandCallback<HubSetPointCloudReturnModeResponse>(cb, client_data));
+  return result;
+}
+
+livox_status HubGetPointCloudReturnMode(HubGetPointCloudReturnModeRequest *req, 
+                                        uint16_t length, 
+                                        HubGetPointCloudReturnModeCallback cb, 
+                                        void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubGetPointCloudReturnMode,
+                                                      (uint8_t *)req,
+                                                      length,
+                                                      MakeCommandCallback<HubGetPointCloudReturnModeResponse>(cb, client_data));
+  return result;
+}
+
+livox_status HubSetImuPushFrequency(HubSetImuPushFrequencyRequest *req, 
+                                    uint16_t length, 
+                                    HubSetImuPushFrequencyCallback cb, 
+                                    void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubSetImuPushFrequency,
+                                                      (uint8_t *)req,
+                                                      length,
+                                                      MakeCommandCallback<HubSetImuPushFrequencyResponse>(cb, client_data));
+  return result;
+}
+
+livox_status HubGetImuPushFrequency(HubGetImuPushFrequencyRequest *req, 
+                                    uint16_t length, 
+                                    HubGetImuPushFrequencyCallback cb, 
+                                    void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeHub) {
+    return kStatusNotSupported;
+  }
+  livox_status result = command_handler().SendCommand(kHubDefaultHandle,
+                                                      kCommandSetHub,
+                                                      kCommandIDHubGetImuPushFrequency,
+                                                      (uint8_t *)req,
+                                                      length,
+                                                      MakeCommandCallback<HubGetImuPushFrequencyResponse>(cb, client_data));
+  return result;
+}
+
+livox_status LidarSetUtcSyncTime(uint8_t handle,
+                                 LidarSetUtcSyncTimeRequest* req,
+                                 CommonCommandCallback cb ,
+                                 void *client_data) {
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetLidar,
+                                                      kCommandIDLidarSetSyncTime,
+                                                      (uint8_t *)req,
+                                                      sizeof(*req),
+                                                      MakeCommandCallback<uint8_t>(cb, client_data));
+  return result;
+}
+
+livox_status LidarSetRmcSyncTime(uint8_t handle,
+                                 const char* rmc,
+                                 uint16_t rmc_length,
+                                 CommonCommandCallback cb,
+                                 void *client_data) {
+  if (device_manager().device_mode() != kDeviceModeLidar
+      || device_manager().IsLidarMid40(handle)) {
+    return kStatusNotSupported;
+  }
+ 
+  LidarSetUtcSyncTimeRequest utc_time_req;
+  if (!ParseRmcTime(rmc, rmc_length, &utc_time_req)) {
+    return kStatusFailure;
+  }
+
+  return LidarSetUtcSyncTime(handle, &utc_time_req, cb, client_data);
 }

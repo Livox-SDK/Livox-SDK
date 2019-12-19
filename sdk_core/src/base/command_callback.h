@@ -34,18 +34,18 @@ namespace livox {
 class CommandCallback {
  public:
   virtual ~CommandCallback() {}
-  virtual void operator()(uint8_t handle, void *data) = 0;
+  virtual void operator()(livox_status status,uint8_t handle, void *data) = 0;
 };
 
 template <class T, class ResponseType>
 class MemberFunctionCallback : public CommandCallback {
  public:
-  typedef void (T::*MemFn)(uint8_t status, uint8_t handle, ResponseType *data);
+  typedef void (T::*MemFn)(livox_status status, uint8_t handle, ResponseType *data);
 
   MemberFunctionCallback(T *cls, MemFn func) : this_(cls), func_(func) {}
-  void operator()(uint8_t handle, void *data) {
+  void operator()(livox_status status, uint8_t handle, void *data) {
     if (this_) {
-      (this_->*func_)((data == NULL) ? kStatusTimeout : kStatusSuccess, handle, static_cast<ResponseType *>(data));
+      (this_->*func_)(status, handle, static_cast<ResponseType *>(data));
     }
   }
 
@@ -57,14 +57,16 @@ class MemberFunctionCallback : public CommandCallback {
 template <class T>
 class MemberFunctionCallback<T, uint8_t> : public CommandCallback {
  public:
-  typedef void (T::*MemFn)(uint8_t status, uint8_t handle, uint8_t response);
+  typedef void (T::*MemFn)(livox_status status, uint8_t handle, uint8_t response);
 
   MemberFunctionCallback(T *cls, MemFn func) : this_(cls), func_(func) {}
-  void operator()(uint8_t handle, void *data) {
+  void operator()(livox_status status, uint8_t handle, void *data) {
     if (this_) {
-      (this_->*func_)((data == NULL) ? kStatusTimeout : kStatusSuccess,
-                      handle,
-                      static_cast<uint8_t>(reinterpret_cast<uintptr_t>(data)));
+      if (data == NULL) {
+        (this_->*func_)(status, handle, 0);
+      } else {
+        (this_->*func_)(status, handle, static_cast<uint8_t>(reinterpret_cast<uintptr_t>(data)));
+      }
     }
   }
 
@@ -83,13 +85,13 @@ boost::shared_ptr<CommandCallback> MakeCommandCallback(T *cls,
 template <class T>
 class FunctionStatusCallback : public CommandCallback {
  public:
-  typedef void (*Fn)(uint8_t status, uint8_t handle, T *data, void *client_data);
+  typedef void (*Fn)(livox_status status, uint8_t handle, T *data, void *client_data);
 
  public:
   FunctionStatusCallback(Fn func, void *client_data) : func_(func), client_data_(client_data) {}
-  void operator()(uint8_t handle, void *data) {
+  void operator()(livox_status status, uint8_t handle, void *data) {
     if (func_) {
-      (*func_)((data == NULL) ? kStatusTimeout : kStatusSuccess, handle, static_cast<T *>(data), client_data_);
+      (*func_)(status, handle, static_cast<T *>(data), client_data_);
     }
   }
 
@@ -101,16 +103,16 @@ class FunctionStatusCallback : public CommandCallback {
 template <>
 class FunctionStatusCallback<uint8_t> : public CommandCallback {
  public:
-  typedef void (*Fn)(uint8_t status, uint8_t handle, uint8_t data, void *client_data);
+  typedef void (*Fn)(livox_status status, uint8_t handle, uint8_t data, void *client_data);
 
  public:
   FunctionStatusCallback(Fn func, void *client_data) : func_(func), client_data_(client_data) {}
-  void operator()(uint8_t handle, void *data) {
+  void operator()(livox_status status, uint8_t handle, void *data) {
     if (func_) {
       if (data == NULL) {
-        (*func_)(kStatusTimeout, handle, 0, client_data_);
+        (*func_)(status, handle, 0, client_data_);
       } else {
-        (*func_)(kStatusSuccess, handle, *(uint8_t *)data, client_data_);
+        (*func_)(status, handle, *(uint8_t *)data, client_data_);
       }
     }
   }
@@ -129,13 +131,13 @@ boost::shared_ptr<CommandCallback> MakeCommandCallback(typename FunctionStatusCa
 template <class T>
 class MessageCallback : public CommandCallback {
  public:
-  typedef void (*Fn)(uint8_t handle, T *data);
+  typedef void (*Fn)(livox_status status, uint8_t handle, T *data);
 
  public:
   MessageCallback(const Fn &func) : func_(func) {}
-  void operator()(uint8_t handle, void *data) {
+  void operator()(livox_status status, uint8_t handle, void *data) {
     if (func_) {
-      (*func_)(handle, static_cast<T *>(data));
+      (*func_)(status, handle, static_cast<T *>(data));
     }
   }
 
@@ -146,13 +148,13 @@ class MessageCallback : public CommandCallback {
 template <class ResponseType>
 class BoostFunctionMessageCallback : public CommandCallback {
  public:
-  typedef boost::function<void(uint8_t, ResponseType *)> Fn;
+  typedef boost::function<void(livox_status, uint8_t, ResponseType *)> Fn;
 
  public:
   BoostFunctionMessageCallback(const Fn &func) : func_(func) {}
-  void operator()(uint8_t handle, void *data) {
+  void operator()(livox_status status, uint8_t handle, void *data) {
     if (func_) {
-      func_(handle, static_cast<ResponseType *>(data));
+      func_(status, handle, static_cast<ResponseType *>(data));
     }
   }
 
@@ -175,12 +177,12 @@ boost::shared_ptr<CommandCallback> MakeMessageCallback(typename BoostFunctionMes
 template <class T, class ResponseType>
 class MemberMessageCallback : public CommandCallback {
  public:
-  typedef void (T::*MemFn)(uint8_t handle, ResponseType *data);
+  typedef void (T::*MemFn)(livox_status status, uint8_t handle, ResponseType *data);
 
   MemberMessageCallback(T *cls, MemFn func) : this_(cls), func_(func) {}
-  void operator()(uint8_t handle, void *data) {
+  void operator()(livox_status status,uint8_t handle, void *data) {
     if (this_) {
-      (this_->*func_)(handle, (ResponseType *)data);
+      (this_->*func_)(status, handle, (ResponseType *)data);
     }
   }
 
@@ -202,12 +204,12 @@ class BoostFunctionCallback : public CommandCallback {
  public:
   typedef boost::function<void(uint8_t, uint8_t, ResponseType *)> Fn;
   BoostFunctionCallback(const Fn &func) : func_(func) {}
-  void operator()(uint8_t handle, void *data) {
+  void operator()(livox_status status,uint8_t handle, void *data) {
     if (func_) {
       if (data == NULL) {
-        func_(kStatusTimeout, handle, NULL);
+        func_(status, handle, NULL);
       } else {
-        func_(kStatusSuccess, handle, (ResponseType *)data);
+        func_(status, handle, (ResponseType *)data);
       }
     }
   }
@@ -221,12 +223,12 @@ class BoostFunctionCallback<uint8_t> : public CommandCallback {
  public:
   typedef boost::function<void(uint8_t, uint8_t, uint8_t)> Fn;
   BoostFunctionCallback(const Fn &func) : func_(func) {}
-  void operator()(uint8_t handle, void *data) {
+  void operator()(livox_status status,uint8_t handle, void *data) {
     if (func_) {
       if (data == NULL) {
-        func_(kStatusTimeout, handle, 0);
+        func_(status, handle, 0);
       } else {
-        func_(kStatusSuccess, handle, static_cast<uint8_t>(reinterpret_cast<uintptr_t>(data)));
+        func_(status, handle, static_cast<uint8_t>(reinterpret_cast<uintptr_t>(data)));
       }
     }
   }

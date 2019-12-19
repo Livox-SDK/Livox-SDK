@@ -35,6 +35,9 @@ void IOThread::ThreadFunc() {
   if (loop_ == NULL) {
     return;
   }
+  apr_os_thread_t thread_id = apr_os_thread_current();
+  loop_->SetThreadId(thread_id);
+
   while (!IsQuit()) {
     loop_->Loop();
   }

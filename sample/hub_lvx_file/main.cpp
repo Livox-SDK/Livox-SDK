@@ -44,30 +44,44 @@ bool is_finish_extrinsic_parameter = false;
 
 #define FRAME_RATE 20
 
+using namespace std::chrono;
+
 /** Connect the first broadcast hub in default and connect specific device when use program options or broadcast_code_list is not empty. */
 std::vector<std::string> broadcast_code_list = {
-  //"000000000000001"
 };
+
+/** Receiving error message from Livox Hub. */
+void OnHubErrorStatusCallback(livox_status status, uint8_t handle, ErrorMessage *message) {
+  static uint32_t error_message_count = 0;
+  if (message != NULL) {
+    ++error_message_count;
+    if (0 == (error_message_count % 100)) {
+      printf("handle: %u\n", handle);
+      printf("sync_status : %u\n", message->hub_error_code.sync_status);
+      printf("temp_status : %u\n", message->hub_error_code.temp_status);
+      printf("lidar_status :%u\n", message->hub_error_code.lidar_status);
+      printf("lidar_link_status : %u\n", message->hub_error_code.lidar_link_status);
+      printf("firmware_err : %u\n", message->hub_error_code.firmware_err);
+      printf("system_status : %u\n", message->hub_error_code.system_status);
+    }
+  }
+}
 
 /** Receiving point cloud data from Livox Hub. */
 void GetHubData(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data) {
   if (data) {
     if (is_finish_extrinsic_parameter) {
-      std::lock_guard<std::mutex> lock(mtx);
+      std::unique_lock<std::mutex> lock(mtx);
       LvxBasePackDetail packet;
       packet.device_index = lidar_units_index[HubGetLidarHandle(data->slot, data->id)];
       lvx_file_handler.BasePointsHandle(data, packet);
       point_packet_list.push_back(packet);
-
-      if (point_packet_list.size() % (50 * broadcast_code_list.size()) == 0) {
-        condition_variable.notify_one();
-      }
     }
   }
 }
 
 /** Callback function of starting sampling. */
-void OnSampleCallback(uint8_t status, uint8_t handle, uint8_t response, void *data) {
+void OnSampleCallback(livox_status status, uint8_t handle, uint8_t response, void *data) {
   printf("OnSampleCallback statue %d handle %d response %d \n", status, handle, response);
   if (status == kStatusSuccess) {
     if (response != 0) {
@@ -79,15 +93,15 @@ void OnSampleCallback(uint8_t status, uint8_t handle, uint8_t response, void *da
 }
 
 /** Callback function of stopping sampling. */
-void OnStopSampleCallback(uint8_t status, uint8_t handle, uint8_t response, void *data) {
+void OnStopSampleCallback(livox_status status, uint8_t handle, uint8_t response, void *data) {
 }
 
 /** Callback function of get LiDAR units' extrinsic parameter. */
-void OnGetLidarUnitsExtrinsicParameter(uint8_t status, uint8_t handle, HubGetExtrinsicParameterResponse *response, void *data) {
+void OnGetLidarUnitsExtrinsicParameter(livox_status status, uint8_t handle, HubGetExtrinsicParameterResponse *response, void *data) {
   if (status == kStatusSuccess) {
     if (response != 0) {
       printf("OnGetLidarUnitsExtrinsicParameter statue %d handle %d response %d \n", status, handle, response->ret_code);
-      std::lock_guard<std::mutex> lock(mtx);
+      std::unique_lock<std::mutex> lock(mtx);
       LvxDeviceInfo lidar_info;
       for (int i = 0; i < response->count; i++) {
         ExtrinsicParameterResponseItem temp;
@@ -107,12 +121,20 @@ void OnGetLidarUnitsExtrinsicParameter(uint8_t status, uint8_t handle, HubGetExt
         }
 
         lidar_info.device_type = devices[handle].info.type;
+        lidar_info.extrinsic_enable = false;
         lidar_info.pitch = temp.pitch;
         lidar_info.roll = temp.roll;
         lidar_info.yaw = temp.yaw;
         lidar_info.x = static_cast<float>(temp.x / 1000.0);
         lidar_info.y = static_cast<float>(temp.y / 1000.0);
         lidar_info.z = static_cast<float>(temp.z / 1000.0);
+        printf("index: %d\n",lidar_info.device_index);
+        printf("pitch: %f\n", lidar_info.pitch);
+        printf("roll: %f\n", lidar_info.roll);
+        printf("yaw: %f\n", lidar_info.yaw);
+        printf("x: %f\n", lidar_info.x);
+        printf("y: %f\n", lidar_info.y);
+        printf("z: %f\n", lidar_info.z);
         lvx_file_handler.AddDeviceInfo(lidar_info);
       }
       is_finish_extrinsic_parameter = true;
@@ -124,7 +146,8 @@ void OnGetLidarUnitsExtrinsicParameter(uint8_t status, uint8_t handle, HubGetExt
   }
 }
 
-void OnHubLidarInfo(uint8_t status, uint8_t handle, HubQueryLidarInformationResponse *response, void *client_data) {
+/** Callback function of get LiDAR units' information. */
+void OnHubLidarInfo(livox_status status, uint8_t handle, HubQueryLidarInformationResponse *response, void *client_data) {
   if (status != kStatusSuccess) {
     printf("Device Query Informations Failed %d\n", status);
   }
@@ -139,8 +162,44 @@ void OnHubLidarInfo(uint8_t status, uint8_t handle, HubQueryLidarInformationResp
   }
 }
 
+void HubDeviceDisconnect() {
+  uint8_t handle = 0;
+  for (handle = 0; handle < kMaxLidarCount; ++handle) {
+    if (devices[handle].device_state == kDeviceStateConnect ) {
+      devices[handle].device_state = kDeviceStateDisconnect;
+    }
+  }
+}
+
+void HubDeviceConnectionChange() {
+  HubDeviceDisconnect();
+  DeviceInfo *_devices = (DeviceInfo *) malloc(sizeof(DeviceInfo) * kMaxLidarCount);
+  uint8_t count = kMaxLidarCount;
+  livox_status status = GetConnectedDevices(_devices, &count);
+  if (status == kStatusSuccess) {
+    int i = 0;
+    for (i = 0; i < count; ++i) {
+      uint8_t handle = _devices[i].handle;
+      if (handle < kMaxLidarCount) {
+        devices[handle].handle = handle;
+        devices[handle].info = _devices[i];
+        devices[handle].device_state = kDeviceStateConnect;
+      }
+    }
+  }
+  if (_devices) {
+    free(_devices);
+  }
+  HubQueryLidarInformation(OnHubLidarInfo, NULL);
+}
+
+void HubDeviceStateChange(const DeviceInfo *info) {
+  devices[info->handle].info = *info;
+}
+
+
 /** Callback function of changing of device state. */
-void OnDeviceChange(const DeviceInfo *info, DeviceEvent type) {
+void OnDeviceInfoChange(const DeviceInfo *info, DeviceEvent type) {
   if (info == nullptr) {
     return;
   }
@@ -149,28 +208,29 @@ void OnDeviceChange(const DeviceInfo *info, DeviceEvent type) {
   if (handle >= kMaxLidarCount) {
     return;
   }
-  if (type == kEventConnect) {
-    HubQueryLidarInformation(OnHubLidarInfo, nullptr);
-    if (devices[handle].device_state == kDeviceStateDisconnect) {
-      devices[handle].device_state = kDeviceStateConnect;
-      devices[handle].info = *info;
-    }
+  if (type == kEventHubConnectionChange) {
+    HubDeviceConnectionChange();
+    printf("[WARNING] Hub sn: [%s] Connection Change!!!\n", info->broadcast_code);
   } else if (type == kEventDisconnect) {
-    devices[handle].device_state = kDeviceStateDisconnect;
+    HubDeviceDisconnect();
+    printf("[WARNING] Hub[%s] Disconnect!\n", info->broadcast_code);
   } else if (type == kEventStateChange) {
-    devices[handle].info = *info;
+    HubDeviceStateChange(info);
+    printf("[WARNING] Hub sn [%s] StateChange!!!\n", info->broadcast_code);
   }
-
   if (devices[handle].device_state == kDeviceStateConnect) {
-    printf("Device State error_code %d\n", devices[handle].info.status.status_code);
-    printf("Device State working state %d\n", devices[handle].info.state);
-    printf("Device feature %d\n", devices[handle].info.feature);
+    printf("Hub Working State %d\n", devices[handle].info.state);
+    if (devices[handle].info.state == kLidarStateInit) {
+      printf("Hub State Change Progress %u\n", devices[handle].info.status.progress);
+    } else {
+      printf("Hub State Error Code 0X%08x\n", devices[handle].info.status.status_code.error_code);
+    }
+    printf("Hub feature %d\n", devices[handle].info.feature);
+    SetErrorMessageCallback(handle, OnHubErrorStatusCallback);
     if (devices[handle].info.state == kLidarStateNormal) {
-      if (devices[handle].info.type == kDeviceTypeHub) {
-        HubGetExtrinsicParameter(OnGetLidarUnitsExtrinsicParameter, nullptr);
-        HubStartSampling(OnSampleCallback, nullptr);
-        devices[handle].device_state = kDeviceStateSampling;
-      }
+      HubGetExtrinsicParameter(OnGetLidarUnitsExtrinsicParameter, nullptr);
+      HubStartSampling(OnSampleCallback, nullptr);
+      devices[handle].device_state = kDeviceStateSampling;
     }
   }
 }
@@ -179,7 +239,7 @@ void OnDeviceChange(const DeviceInfo *info, DeviceEvent type) {
  * You need to add listening device broadcast code and set the point cloud data callback in this function.
  */
 void OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
-  if (info == nullptr) {
+  if (info == nullptr || info->dev_type!= kDeviceTypeHub) {
     return;
   }
 
@@ -197,8 +257,7 @@ void OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
     if (!found) {
       return;
     }
-  }
-  else {
+  } else {
     broadcast_code_list.push_back(info->broadcast_code);
     return;
   }
@@ -221,10 +280,10 @@ int SetProgramOption(int argc, const char *argv[]) {
   apr_pool_t *mp = nullptr;
   static const apr_getopt_option_t opt_option[] = {
     /** Long-option, short-option, has-arg flag, description */
-    { "code", 'c', 1, "Register device broadcast code" },     
-    { "log", 'l', 0, "Save the log file" },    
+    { "code", 'c', 1, "Register device broadcast code" },
+    { "log", 'l', 0, "Save the log file" },
     { "time", 't', 1, "Time to save point cloud to the lvx file" },
-    { "help", 'h', 0, "Show help" },    
+    { "help", 'h', 0, "Show help" },
     { nullptr, 0, 0, nullptr },
   };
   apr_getopt_t *opt = nullptr;
@@ -311,7 +370,7 @@ int main(int argc, const char *argv[]) {
 /** Set the callback function called when device state change,
  * which means connection/disconnection and changing of LiDAR state.
  */
-  SetDeviceStateUpdateCallback(OnDeviceChange);
+  SetDeviceStateUpdateCallback(OnDeviceInfoChange);
 
 /** Start the device discovering routine. */
   if (!Start()) {
@@ -330,17 +389,23 @@ int main(int argc, const char *argv[]) {
     Uninit();
     return -1;
   }
+
   lvx_file_handler.InitLvxFileHeader();
 
   int i = 0;
+  steady_clock::time_point last_time = steady_clock::now();
   for (i = 0; i < lvx_file_save_time * FRAME_RATE; ++i) {
     std::list<LvxBasePackDetail> point_packet_list_temp;
     {
       std::unique_lock<std::mutex> lock(mtx);
-      condition_variable.wait(lock);
+      condition_variable.wait_for(lock, milliseconds(kDefaultFrameDurationTime) - (steady_clock::now() - last_time));
+      last_time = steady_clock::now();
       point_packet_list_temp.swap(point_packet_list);
     }
-
+    if(point_packet_list_temp.empty()) {
+      printf("Point cloud packet is empty.\n");
+      break;
+    }
     printf("Finish save %d frame to lvx file.\n", i);
     lvx_file_handler.SaveFrameToLvxFile(point_packet_list_temp);
   }
@@ -348,7 +413,7 @@ int main(int argc, const char *argv[]) {
   lvx_file_handler.CloseLvxFile();
 
   HubStopSampling(OnStopSampleCallback, NULL);
-  printf("stop sample\n");
+  printf("Stop sample\n");
 
   Uninit();
 }

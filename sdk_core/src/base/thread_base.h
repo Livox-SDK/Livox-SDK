@@ -26,6 +26,7 @@
 #define LIVOX_THREAD_BASE_H_
 #include <apr_general.h>
 #include <apr_thread_proc.h>
+#include <apr_portable.h>
 #include <boost/atomic/atomic.hpp>
 #include "noncopyable.h"
 

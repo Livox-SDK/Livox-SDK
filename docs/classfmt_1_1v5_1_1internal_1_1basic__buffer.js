@@ -1,6 +1,5 @@
 var classfmt_1_1v5_1_1internal_1_1basic__buffer =
 [
-    [ "const_reference", "classfmt_1_1v5_1_1internal_1_1basic__buffer.html#abfe6d821425b515382f5001823d40836", null ],
     [ "value_type", "classfmt_1_1v5_1_1internal_1_1basic__buffer.html#a7c82c2c4e3782e9770d45d564f9425a5", null ],
     [ "basic_buffer", "classfmt_1_1v5_1_1internal_1_1basic__buffer.html#a590c6a8e6f850c98dbc82ffea1b50650", null ],
     [ "basic_buffer", "classfmt_1_1v5_1_1internal_1_1basic__buffer.html#a8a3f3c0ba824744bfc879e042c691dca", null ],
@@ -19,5 +18,6 @@ var classfmt_1_1v5_1_1internal_1_1basic__buffer =
     [ "reserve", "classfmt_1_1v5_1_1internal_1_1basic__buffer.html#ab306d6d55956332b1083e967393a59f1", null ],
     [ "resize", "classfmt_1_1v5_1_1internal_1_1basic__buffer.html#af20fa1cd5e5bd230ab1d4e89c6aead38", null ],
     [ "set", "classfmt_1_1v5_1_1internal_1_1basic__buffer.html#aeadf1e58eae72ef94f9e2c01ad7921c6", null ],
-    [ "size", "classfmt_1_1v5_1_1internal_1_1basic__buffer.html#ac4761deba75a7238ae29243b159b9943", null ]
+    [ "size", "classfmt_1_1v5_1_1internal_1_1basic__buffer.html#ac4761deba75a7238ae29243b159b9943", null ],
+    [ "const_reference", "classfmt_1_1v5_1_1internal_1_1basic__buffer.html#a6681032cf69668f9930f8e1310d4e3b4", null ]
 ];

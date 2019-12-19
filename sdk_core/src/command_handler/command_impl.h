@@ -75,11 +75,15 @@ typedef enum {
   /**
    * General command set, set the IP of the a device.
    */
-  kCommandIDGeneralConfigureStaticDynamicIP = 8,
+  kCommandIDGeneralConfigureStaticDynamicIp = 8,
   /**
    * General command set, get the IP of the a device.
    */
-  kCommandIDGeneralGetDeviceIPInformation = 9,
+  kCommandIDGeneralGetDeviceIpInformation = 9,
+  /**
+   * General command set, reboot a device.
+   */
+  kCommandIDGeneralRebootDevice = 0x0a,
 
   /**
    * ******************************************************
@@ -89,6 +93,7 @@ typedef enum {
 } GeneralCommandID;
 
 static const uint16_t GeneralCommandTimeout[kCommandIDGeneralCommandCount] = {KDefaultTimeOut,
+                                                                              KDefaultTimeOut,
                                                                               KDefaultTimeOut,
                                                                               KDefaultTimeOut,
                                                                               KDefaultTimeOut,
@@ -117,7 +122,34 @@ typedef enum {
    * Lidar command set, enable or disable the rain/fog suppression of a LiDAR.
    */
   kCommandIDLidarControlRainFogSuppression = 3,
-
+  /**
+   * Lidar command set, turn on\off fan of a LiDAR.
+   */
+  kCommandIDLidarControlFan = 4,
+    /**
+   * Lidar command set, get fan state of a LiDAR.
+   */
+  kCommandIDLidarGetFanState = 5,
+  /**
+   * Lidar command set, set point cloud return mode of a LiDAR.
+   */
+  kCommandIDLidarSetPointCloudReturnMode = 6,
+  /**
+   * Lidar command set, get point cloud return mode of a LiDAR.
+   */
+  kCommandIDLidarGetPointCloudReturnMode = 7,
+  /**
+   * Lidar command set, set IMU push frequency of a LiDAR.
+   */
+  kCommandIDLidarSetImuPushFrequency = 8,
+  /**
+   * Lidar command set, get IMU push frequency of a LiDAR.
+   */
+  kCommandIDLidarGetImuPushFrequency = 9,
+  /**
+   * Lidar command set, set synchronization time of a LiDAR.
+   */
+  kCommandIDLidarSetSyncTime = 0x0a,
   /**
    * ******************************************************
    * Don't add command id after kCommandIDLidarCommandCount.
@@ -126,6 +158,13 @@ typedef enum {
 } LidarCommandID;
 
 static const uint16_t LidarCommandTimeout[kCommandIDLidarCommandCount] = {KDefaultTimeOut,
+                                                                          KDefaultTimeOut,
+                                                                          KDefaultTimeOut,
+                                                                          KDefaultTimeOut,
+                                                                          KDefaultTimeOut,
+                                                                          KDefaultTimeOut,
+                                                                          KDefaultTimeOut,
+                                                                          KDefaultTimeOut,
                                                                           KDefaultTimeOut,
                                                                           KDefaultTimeOut,
                                                                           KDefaultTimeOut};
@@ -168,6 +207,30 @@ typedef enum {
   * Hub command set, get the power supply state of each hub slot.
   */
   kCommandIDHubQuerySlotPowerStatus = 8,
+  /**
+  * Hub command set, turn on\off fan of the connected Livox LiDAR.
+  */
+  kCommandIDHubControlFan = 9,
+  /**
+  * Hub command set, get the fan state of the connected Livox LiDAR.
+  */
+  kCommandIDHubGetFanState = 0x0a,
+  /**
+   * Hub command set, set point cloud return mode of the connected Livox LiDAR.
+   */
+  kCommandIDHubSetPointCloudReturnMode = 0x0b,
+  /**
+  * Hub command set, get point cloud return mode of the connected Livox LiDAR.
+  */
+  kCommandIDHubGetPointCloudReturnMode = 0x0c,
+  /**
+  * Hub command set, set IMU push frequency of the connected Livox LiDAR.
+  */
+  kCommandIDHubSetImuPushFrequency = 0x0d,
+  /**
+  * Hub command set, get IMU push frequency of the connected Livox LiDAR.
+  */
+  kCommandIDHubGetImuPushFrequency = 0x0e,
 
   /**
    * ******************************************************
@@ -177,6 +240,12 @@ typedef enum {
 } HubCommandID;
 
 static const uint16_t HubCommandTimeout[kCommandIDHubCommandCount] = {KDefaultTimeOut,
+                                                                      KDefaultTimeOut,
+                                                                      KDefaultTimeOut,
+                                                                      KDefaultTimeOut,
+                                                                      KDefaultTimeOut,
+                                                                      KDefaultTimeOut,
+                                                                      KDefaultTimeOut,
                                                                       KDefaultTimeOut,
                                                                       KDefaultTimeOut,
                                                                       KDefaultTimeOut,
@@ -197,5 +266,18 @@ typedef enum {
   /** message type, which is sent at a specified frequency. */
   kCommandTypeMsg = 2
 } CommandType;
+
+#pragma pack(1)
+/**
+ * The request body of the command for setting device's IP mode.
+ */
+typedef struct {
+  uint8_t ip_mode;    /**< IP address mode: 0 for dynamic IP address, 1 for static IP address. */
+  uint32_t ip_addr;   /**< IP address. */
+  uint32_t net_mask;  /**< Subnet mask. */
+  uint32_t gw_addr;   /**< Gateway address. */
+} SetDeviceIpExtendModeRequest;
+#pragma pack()
+
 }  // namespace livox
 #endif  // LIVOX_SDK_COMMAND_IMPL_H

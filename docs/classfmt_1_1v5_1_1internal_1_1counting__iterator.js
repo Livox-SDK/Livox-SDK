@@ -8,7 +8,7 @@ var classfmt_1_1v5_1_1internal_1_1counting__iterator =
     [ "value_type", "classfmt_1_1v5_1_1internal_1_1counting__iterator.html#a13f8c5691061c696945f38159080fe2e", null ],
     [ "counting_iterator", "classfmt_1_1v5_1_1internal_1_1counting__iterator.html#a9d2f0224d9f4a23484dc28c67ac81f13", null ],
     [ "count", "classfmt_1_1v5_1_1internal_1_1counting__iterator.html#af0879937c615e146111e361db9a393d9", null ],
-    [ "operator *", "classfmt_1_1v5_1_1internal_1_1counting__iterator.html#a79e3e8094b4d91acd6233a2f1bd69add", null ],
+    [ "operator*", "classfmt_1_1v5_1_1internal_1_1counting__iterator.html#aeb8e427b454f5b1669726a550df4f50e", null ],
     [ "operator++", "classfmt_1_1v5_1_1internal_1_1counting__iterator.html#a5f49bbf0aec176d242443c81811b439c", null ],
     [ "operator++", "classfmt_1_1v5_1_1internal_1_1counting__iterator.html#ab92c73e74847673855c24767e21430dd", null ]
 ];

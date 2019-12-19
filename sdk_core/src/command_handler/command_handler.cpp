@@ -61,6 +61,32 @@ uint16_t GetCommandTimeout(uint8_t command_set, uint8_t command_id) {
   return KDefaultTimeOut;
 }
 
+bool IsSubLidarException(const Command &command) {
+  if (device_manager().device_mode() == kDeviceModeLidar) {
+    return false;
+  }
+  if (!(command.packet.cmd_set == kCommandSetGeneral &&
+      command.packet.cmd_code == kCommandIDGeneralPushAbnormalState)) {
+    return false;
+  }
+
+  HubErrorCode* hub_error_code = static_cast<HubErrorCode *>((void *)command.packet.data);
+  if (hub_error_code->lidar_link_status == 0x01) {
+    return true;
+  }
+  return false;
+}
+
+bool IsMidDeviceIpResponse(const Command &command) {
+  return command.packet.cmd_set == kCommandSetGeneral &&
+         command.packet.cmd_code == kCommandIDGeneralGetDeviceIpInformation &&
+         command.packet.data_len != sizeof(GetDeviceIpModeResponse);
+}
+
+void OnSubLidarDisconnect() {
+  device_manager().UpdateDevices(DeviceInfo(), kEventHubConnectionChange);
+}
+
 bool CommandHandler::AddDevice(const DeviceInfo &info) {
   if (impl_ == NULL) {
     DeviceMode mode = static_cast<DeviceMode>(device_manager().device_mode());
@@ -109,14 +135,14 @@ void CommandHandler::OnCommand(uint8_t handle, const Command &command) {
   }
 }
 
-bool CommandHandler::SendCommand(uint8_t handle,
-                                 uint8_t command_set,
-                                 uint8_t command_id,
-                                 uint8_t *data,
-                                 uint16_t length,
-                                 const shared_ptr<CommandCallback> &cb) {
+livox_status CommandHandler::SendCommand(uint8_t handle,
+                                         uint8_t command_set,
+                                         uint8_t command_id,
+                                         uint8_t *data,
+                                         uint16_t length,
+                                         const shared_ptr<CommandCallback> &cb) {
   if (impl_ == NULL) {
-    return false;
+    return kStatusHandlerImplNotExist;
   }
 
   Command cmd(handle,
@@ -128,24 +154,41 @@ bool CommandHandler::SendCommand(uint8_t handle,
               length,
               GetCommandTimeout(command_set, command_id),
               cb);
-  bool result = impl_->SendCommand(handle, cmd);
+  livox_status result = impl_->SendCommand(handle, cmd);
   return result;
 }
 
-bool CommandHandler::RegisterPush(uint8_t handle,
-                                  uint8_t command_set,
-                                  uint8_t command_id,
-                                  const shared_ptr<CommandCallback> &cb) {
+livox_status CommandHandler::RegisterPush(uint8_t handle,
+                                          uint8_t command_set,
+                                          uint8_t command_id,
+                                          const shared_ptr<CommandCallback> &cb) {
   lock_guard<mutex> lock(mutex_);
   Command req(handle, kCommandTypeMsg, command_set, command_id, 0, NULL, 0, 0, cb);
   message_registers_.insert(make_pair(MakeKey(command_set, command_id), req));
-  return true;
+  return kStatusSuccess;
 }
 
 void CommandHandler::OnCommandAck(uint8_t handle, const Command &command) {
-  if (command.cb != NULL) {
-    (*command.cb)(handle, command.packet.data);
+  if (command.cb == NULL) {
+    return;
   }
+  if (command.packet.data == NULL) {
+    (*command.cb)(kStatusTimeout, handle, command.packet.data);
+    return;
+  }
+
+  if (IsMidDeviceIpResponse(command)) {
+    GetDeviceIpModeResponse  response;
+    memcpy(&response, command.packet.data, command.packet.data_len);
+    uint8_t net_mask[4] = {255, 255, 255, 0};
+    memcpy(&response.net_mask, net_mask, 4);
+    uint8_t gw_addr[4] = {192, 168, 1, 1};
+    memcpy(&response.gw_addr, gw_addr, 4);
+
+    (*command.cb)(kStatusSuccess, handle, (uint8_t *)&response);
+    return;
+  }
+  (*command.cb)(kStatusSuccess, handle, command.packet.data);
 }
 
 void CommandHandler::OnCommandMsg(uint8_t handle, const Command &command) {
@@ -161,10 +204,13 @@ void CommandHandler::OnCommandMsg(uint8_t handle, const Command &command) {
       }
     }
   }
+  if (IsSubLidarException(command)) {
+    OnSubLidarDisconnect();
+  }
 
   for (list<Command>::iterator ite = commands.begin(); ite != commands.end(); ++ite) {
     if (ite->cb) {
-      (*ite->cb)(handle, command.packet.data);
+      (*ite->cb)(kStatusSuccess, handle, command.packet.data);
     }
   }
 }
