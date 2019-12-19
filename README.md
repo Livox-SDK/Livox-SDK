@@ -5,7 +5,7 @@ Livox SDK is the software development kit designed for all Livox products. It is
 Livox SDK consists of Livox SDK communication protocol, Livox SDK core, Livox SDK API, Linux sample, and ROS demo. 
 
 ## Prerequisites
-* Ubuntu 14.04/Ubuntu 16.04, both x86 and ARM (Nvidia TX2)
+* Ubuntu 14.04/Ubuntu 16.04/Ubuntu 18.04, both x86 and ARM (Nvidia TX2)
 * Windows 7/10, Visual Studio 2015/2017
 * C++11 compiler
 
@@ -28,8 +28,8 @@ The Livox LiDAR sensors can be connected to host directly or through the Livox H
 Livox SDK API provides a set of C style functions which can be conveniently integrated in C/C++ programs. Please refer to the [Livox SDK API Reference](https://livox-sdk.github.io/Livox-SDK/) for further information.
 
 ## 4.1 Installation
-The installation procedures in Ubuntu 16.04/14.04 LTS and Windows 7/10 are shown here as examples. For Ubuntu 16.04/14.04 32-bit LTS and Mac, you can get it in [Livox-SDK wiki](https://github.com/Livox-SDK/Livox-SDK/wiki).
-### 4.1.1 Ubuntu 16.04/14.04 LTS
+The installation procedures in Ubuntu 18.04/16.04/14.04 LTS and Windows 7/10 are shown here as examples. For Ubuntu 18.04/16.04/14.04 32-bit LTS and Mac, you can get it in [Livox-SDK wiki](https://github.com/Livox-SDK/Livox-SDK/wiki).
+### 4.1.1 Ubuntu 18.04/16.04/14.04 LTS
 #### Dependencies
 Livox SDK requires [CMake 3.0.0+](https://cmake.org/), [Apache Portable Runtime (APR) 1.61+](http://apr.apache.org/) and [Boost 1.54+](https://www.boost.org/) as dependencies. You can install these packages using apt:
 ```
@@ -81,8 +81,8 @@ Two samples are provided in Sample/Lidar and Sample/Hub, which demonstrate how t
 
 ![](doc/images/sample.png)
 
-### 4.2.1 Ubuntu 16.04 /14.04 LTS
-For Ubuntun 16.04/14.04 LTS, run the *lidar_sample* if connect with the LiDAR unit(s):
+### 4.2.1 Ubuntu 18.04/16.04 /14.04 LTS
+For Ubuntun 18.04/16.04/14.04 LTS, run the *lidar_sample* if connect with the LiDAR unit(s):
 ```
 cd sample/lidar && ./lidar_sample
 ```
