@@ -29,6 +29,7 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 #include "livox_def.h"
 #include "livox_sdk.h"

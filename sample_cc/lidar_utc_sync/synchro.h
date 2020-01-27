@@ -30,6 +30,7 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include <string>
 #include <functional>
 #ifdef WIN32
 #include <Windows.h>
