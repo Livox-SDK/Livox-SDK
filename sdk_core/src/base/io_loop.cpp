@@ -82,8 +82,7 @@ void IOLoop::RemoveDelegate(apr_socket_t *sock, IOLoopDelegate *) {
 }
 
 void IOLoop::RemoveDelegateSync(apr_socket_t *sock) {
-  apr_os_thread_t thread_id = apr_os_thread_current();
-  assert(apr_os_thread_equal(this->thread_id_, thread_id));
+  assert(apr_os_thread_equal(this->thread_id_, apr_os_thread_current()));
   RemoveDelegateAsync(sock);
 }
 
