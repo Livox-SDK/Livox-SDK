@@ -47,5 +47,5 @@ Parity is set to `P_8N1`(No parity) by default，you can call `SetParity(Parity 
 
 ​	Livox-SDK release version <= 2.0.0 doesn't support to synchronize Mid40. It will be fix in next release.
 
-​    Or you can refer to [Mid40's UTC synchronization](https://github.com/Livox-SDK/Livox-SDK/issues/31) to resolve the problem temporarily.
+​ Or you can refer to [Mid40's UTC synchronization](https://github.com/Livox-SDK/Livox-SDK/issues/31) to resolve the problem temporarily.
 
