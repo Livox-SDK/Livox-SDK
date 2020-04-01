@@ -25,7 +25,7 @@
 #ifndef LIVOX_DEVICE_DISCOVERY_
 #define LIVOX_DEVICE_DISCOVERY_
 
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 #include <string>
 #include "apr_general.h"
 #include "apr_network_io.h"
@@ -43,7 +43,7 @@ namespace livox {
  */
 class DeviceDiscovery : public noncopyable, IOLoop::IOLoopDelegate {
  public:
-  DeviceDiscovery() : sock_(NULL), mem_pool_(NULL), loop_(NULL), comm_port_(NULL) {}
+  DeviceDiscovery() : sock_(NULL), mem_pool_(NULL), loop_(NULL), comm_port_(nullptr) {}
   bool Init();
   void Uninit();
 
@@ -79,9 +79,9 @@ class DeviceDiscovery : public noncopyable, IOLoop::IOLoopDelegate {
   apr_socket_t *sock_;
   apr_pool_t *mem_pool_;
   IOLoop *loop_;
-  boost::scoped_ptr<CommPort> comm_port_;
-  boost::mutex mutex_;
-  typedef std::map<apr_socket_t *, boost::tuple<apr_pool_t *, apr_time_t, DeviceInfo> > ConnectingDeviceMap;
+  std::unique_ptr<CommPort> comm_port_;
+  std::mutex mutex_;
+  typedef std::map<apr_socket_t *, std::tuple<apr_pool_t *, apr_time_t, DeviceInfo> > ConnectingDeviceMap;
   ConnectingDeviceMap connecting_devices_;
 };
 

@@ -24,7 +24,7 @@
 
 #include "network_util.h"
 #ifdef WIN32
-#include <boost/scoped_array.hpp>
+#include <memory>
 #include <Winsock2.h>
 #include <iphlpapi.h>
 #include <string>
@@ -101,7 +101,7 @@ bool GetAdapterState(const IP_ADAPTER_INFO *pAdapter)
 bool FindLocalIp(const struct sockaddr_in &client_addr, uint32_t &local_ip) {
   bool found = false;
   ULONG ulOutbufLen = sizeof(IP_ADAPTER_INFO);
-  boost::scoped_array<uint8_t> pAdapterInfo(new uint8_t[ulOutbufLen]);
+  std::unique_ptr<uint8_t[]> pAdapterInfo(new uint8_t[ulOutbufLen]);
   DWORD dlRetVal = GetAdaptersInfo(reinterpret_cast<IP_ADAPTER_INFO *>(pAdapterInfo.get()), &ulOutbufLen);
   if (dlRetVal == ERROR_BUFFER_OVERFLOW) {
     pAdapterInfo.reset(new uint8_t[ulOutbufLen]);

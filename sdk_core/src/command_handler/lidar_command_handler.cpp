@@ -33,8 +33,8 @@ void LidarCommandHandlerImpl::Uninit() {
 }
 
 bool LidarCommandHandlerImpl::AddDevice(const DeviceInfo &info) {
-  boost::shared_ptr<CommandChannel> channel =
-      boost::make_shared<CommandChannel>(info.cmd_port, info.handle, info.ip, this, mem_pool_);
+  std::shared_ptr<CommandChannel> channel =
+      std::make_shared<CommandChannel>(info.cmd_port, info.handle, info.ip, this, mem_pool_);
   channel->Bind(loop_);
 
   DeviceItem item = {channel, info};

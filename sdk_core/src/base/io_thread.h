@@ -24,7 +24,7 @@
 
 #ifndef LIVOX_IO_THREAD_H_
 #define LIVOX_IO_THREAD_H_
-#include <boost/smart_ptr.hpp>
+#include <memory>
 #include "io_loop.h"
 #include "thread_base.h"
 
@@ -32,7 +32,7 @@ namespace livox {
 
 class IOThread : public ThreadBase {
  public:
-  IOThread() : loop_(NULL) {}
+  IOThread() : loop_(nullptr) {}
   bool Init(bool enable_timer = true, bool enable_wake = true);
   void Join();
   void Uninit();
@@ -41,7 +41,7 @@ class IOThread : public ThreadBase {
   void ThreadFunc();
 
  private:
-  boost::scoped_ptr<IOLoop> loop_;
+  std::unique_ptr<IOLoop> loop_;
 };
 }  // namespace livox
 #endif  // LIVOX_IO_THREAD_H_

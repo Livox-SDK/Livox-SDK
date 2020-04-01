@@ -25,7 +25,7 @@
 #ifndef LIVOX_HUB_DATA_HANDLER_H_
 #define LIVOX_HUB_DATA_HANDLER_H_
 
-#include <boost/smart_ptr.hpp>
+#include <memory>
 #include "base/io_thread.h"
 #include "data_handler.h"
 
@@ -45,7 +45,7 @@ class HubDataHandlerImpl : public DataHandlerImpl {
 
  private:
   apr_pool_t *mem_pool_;
-  boost::scoped_ptr<IOThread> thread_;
+  std::unique_ptr<IOThread> thread_;
   apr_socket_t *sock_;
   DeviceInfo hub_info_;
   bool is_valid_;

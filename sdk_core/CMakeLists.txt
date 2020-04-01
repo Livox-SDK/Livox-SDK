@@ -3,20 +3,34 @@ cmake_minimum_required(VERSION 3.0)
 set(SDK_LIBRARY ${PROJECT_NAME}_static)
 add_library(${SDK_LIBRARY} STATIC "")
 
-set(LIVOX_SDK_MAJOR_VERSION "1")
-set(LIVOX_SDK_MINOR_VERSION "2")
-set(LIVOX_SDK_PATCH_VERSION "1")
+set(LIVOX_SDK_MAJOR_VERSION "2")
+set(LIVOX_SDK_MINOR_VERSION "1")
+set(LIVOX_SDK_PATCH_VERSION "0")
 set(LIVOX_SDK_VERSION_STRING "${LIVOX_SDK_MAJOR_VERSION}.${LIVOX_SDK_MINOR_VERSION}.${LIVOX_SDK_PATCH_VERSION}")
 
 if (WIN32)
-    find_path(APR_INCLUDE_DIRS apr.h)
-    find_library(APR_LIBRARIES libapr-1)
-    if (APR_LIBRARIES AND APR_INCLUDE_DIRS)
-        set(APR_FOUND "YES")
-    endif (APR_LIBRARIES AND APR_INCLUDE_DIRS)
+    set(APR_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/third_party/apr/include)
+    set(APR_LIBRARIES ${PROJECT_SOURCE_DIR}/third_party/apr/lib/libapr-1.lib)
+    set(APR_FOUND "YES")
 else (WIN32)
-    find_package(PkgConfig)
-    pkg_check_modules(APR apr-1)
+	if (CMAKE_CROSSCOMPILING)
+		MESSAGE(STATUS "CMAKE CROSS COMPILE")
+		execute_process(
+			COMMAND bash ${PROJECT_SOURCE_DIR}/third_party/apr/apr_cross_build.sh
+			${CMAKE_C_COMPILER}
+			RESULT_VARIABLE cmd_result
+		)
+		MESSAGE("${cmd_result}")
+		if (cmd_result)
+			MESSAGE(FATAL_ERROR "APR BUILD FAILED")
+		endif()
+		set(APR_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/third_party/apr/include/apr-1)
+		set(APR_LIBRARIES ${PROJECT_SOURCE_DIR}/third_party/apr/lib/libapr-1.so)
+		set(APR_FOUND "YES")
+	else (CMAKE_CROSSCOMPILING)
+		find_package(PkgConfig)
+		pkg_check_modules(APR apr-1)
+	endif(CMAKE_CROSSCOMPILING)
 endif (WIN32)
 
 if (APR_FOUND)
@@ -33,20 +47,6 @@ if (APR_FOUND)
                 ${APR_LIBRARIES})
     endif ()
 endif ()
-
-find_package(Boost 1.54 REQUIRED COMPONENTS system)
-if(Boost_FOUND)
-    if (Boost_VERSION LESS 106900)
-        target_link_libraries(${SDK_LIBRARY} 
-                PUBLIC
-                Boost::boost
-                Boost::system)
-    else()
-        target_link_libraries(${SDK_LIBRARY}     
-                PUBLIC      
-                Boost::boost)
-    endif()
-endif()
 
 target_include_directories(${SDK_LIBRARY}
         PUBLIC

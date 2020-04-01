@@ -6,8 +6,8 @@ var classfmt_1_1v5_1_1internal_1_1truncating__iterator__base =
     [ "pointer", "classfmt_1_1v5_1_1internal_1_1truncating__iterator__base.html#acfec8964ca97b0ea4a08d2efff4ba6ba", null ],
     [ "reference", "classfmt_1_1v5_1_1internal_1_1truncating__iterator__base.html#aa891dd373534efdbf8a03c9b1b5a77fa", null ],
     [ "truncating_iterator_base", "classfmt_1_1v5_1_1internal_1_1truncating__iterator__base.html#a9722e33a6fdfb563b8db59829f133711", null ],
-    [ "base", "classfmt_1_1v5_1_1internal_1_1truncating__iterator__base.html#aa704255e4ff2778a7149a7d2cf687e5f", null ],
-    [ "count", "classfmt_1_1v5_1_1internal_1_1truncating__iterator__base.html#a56850280db1992628ce9afaab31c8637", null ],
+    [ "base", "classfmt_1_1v5_1_1internal_1_1truncating__iterator__base.html#a7c53dfb46eb6438dbab9ac6b8359ddec", null ],
+    [ "count", "classfmt_1_1v5_1_1internal_1_1truncating__iterator__base.html#ab45d5f8ca7d6b6838ddc122f1bd60fe9", null ],
     [ "count_", "classfmt_1_1v5_1_1internal_1_1truncating__iterator__base.html#a16eabcb848e779b567918d0935904b7b", null ],
     [ "limit_", "classfmt_1_1v5_1_1internal_1_1truncating__iterator__base.html#a24832c279c6143d905912d3181872f44", null ],
     [ "out_", "classfmt_1_1v5_1_1internal_1_1truncating__iterator__base.html#a1549daf80c73bb341ed33dbe97d9c8a5", null ]

@@ -27,7 +27,7 @@
 #include <apr_general.h>
 #include <apr_thread_proc.h>
 #include <apr_portable.h>
-#include <boost/atomic/atomic.hpp>
+#include <atomic>
 #include "noncopyable.h"
 
 namespace livox {
@@ -46,7 +46,7 @@ class ThreadBase : public noncopyable {
 
  protected:
   apr_thread_t *thread_;
-  boost::atomic_bool quit_;
+  std::atomic_bool quit_;
   apr_pool_t *pool_;
 };
 

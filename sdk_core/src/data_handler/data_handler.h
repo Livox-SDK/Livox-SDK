@@ -25,10 +25,10 @@
 #ifndef LIVOX_DATA_HANDLER_H_
 #define LIVOX_DATA_HANDLER_H_
 
-#include <boost/array.hpp>
-#include <boost/function.hpp>
-#include <boost/smart_ptr.hpp>
-#include <boost/thread/mutex.hpp>
+#include <array>
+#include <functional>
+#include <memory>
+#include <mutex>
 #include "apr_pools.h"
 #include "base/io_thread.h"
 #include "device_manager.h"
@@ -38,7 +38,7 @@ class DataHandlerImpl;
 
 class DataHandler : public noncopyable {
  public:
-  typedef boost::function<void(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data)> DataCallback;
+  typedef std::function<void(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data)> DataCallback;
 
  public:
   DataHandler() : mem_pool_(NULL) {}
@@ -54,9 +54,9 @@ class DataHandler : public noncopyable {
 
  private:
   apr_pool_t *mem_pool_;
-  boost::array<DataCallback, kMaxConnectedDeviceNum> callbacks_;
-  boost::array<void *, kMaxConnectedDeviceNum> client_data_;
-  boost::scoped_ptr<DataHandlerImpl> impl_;
+  std::array<DataCallback, kMaxConnectedDeviceNum> callbacks_;
+  std::array<void *, kMaxConnectedDeviceNum> client_data_;
+  std::unique_ptr<DataHandlerImpl> impl_;
 };
 
 class DataHandlerImpl : public IOLoop::IOLoopDelegate {

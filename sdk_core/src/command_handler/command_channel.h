@@ -24,7 +24,8 @@
 
 #ifndef LIVOX_COMMAND_CHANNEL_H_
 #define LIVOX_COMMAND_CHANNEL_H_
-#include <boost/smart_ptr.hpp>
+#include <memory>
+#include <map>
 #include <list>
 #include <string>
 #include "apr_network_io.h"
@@ -36,7 +37,7 @@ namespace livox {
 typedef struct TagCommand {
   uint8_t handle;
   CommPacket packet;
-  boost::shared_ptr<CommandCallback> cb;
+  std::shared_ptr<CommandCallback> cb;
   uint32_t time_out;
   TagCommand() : packet(), time_out(0) {}
   TagCommand(uint8_t _handle,
@@ -47,7 +48,7 @@ typedef struct TagCommand {
              uint8_t *data,
              uint16_t length,
              uint32_t _time_out,
-             const boost::shared_ptr<CommandCallback> &_cb)
+             const std::shared_ptr<CommandCallback> &_cb)
       : handle(_handle), packet(), cb(_cb) {
     packet.packet_type = _cmd_type;
     packet.cmd_set = _cmd_set;
@@ -115,7 +116,7 @@ class CommandChannel : public IOLoop::IOLoopDelegate {
   IOLoop *loop_;
   CommandChannelDelegate *callback_;
   std::map<uint16_t, std::pair<Command, apr_time_t> > commands_;
-  boost::scoped_ptr<CommPort> comm_port_;
+  std::unique_ptr<CommPort> comm_port_;
   apr_time_t heartbeat_time_;
   std::string remote_ip_;
   apr_time_t last_heartbeat_;

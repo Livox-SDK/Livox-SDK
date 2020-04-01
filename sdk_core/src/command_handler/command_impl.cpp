@@ -211,6 +211,7 @@ bool ParseRmcTime(const char* rmc, uint16_t rmc_len, LidarSetUtcSyncTimeRequest*
     default:
       return false;
   }
+  utc_time_req->hour = hour;
   utc_time_req->mircrosecond = (minute * 60 * 1000 + second * 1000 + millisecond) * 1000;
   return true;
 }
@@ -339,9 +340,16 @@ livox_status GetDeviceIpInformation(uint8_t handle, GetDeviceIpInformationCallba
 }
 
 livox_status RebootDevice(uint8_t handle, uint16_t timeout, CommonCommandCallback cb, void * client_data) {
-  if(device_manager().IsLidarMid40(handle)) {
-    return kStatusNotSupported;
+  if (device_manager().IsLidarMid40(handle)) {
+    uint32_t firm_ver = 0;
+    // Mid40 firmware version 03.07.0000
+    uint32_t min_firm_ver = (uint32_t)3 << 24 | 7 << 16 | 0 << 8 | 0;
+    device_manager().GetLidarFirmwareVersion(handle, firm_ver);
+    if (firm_ver < min_firm_ver) {
+      return kStatusNotSupported;
+    }
   }
+
   livox_status result = command_handler().SendCommand(handle,
                                                       kCommandSetGeneral,
                                                       kCommandIDGeneralRebootDevice,
@@ -735,9 +743,18 @@ livox_status LidarSetRmcSyncTime(uint8_t handle,
                                  uint16_t rmc_length,
                                  CommonCommandCallback cb,
                                  void *client_data) {
-  if (device_manager().device_mode() != kDeviceModeLidar
-      || device_manager().IsLidarMid40(handle)) {
+  if (device_manager().device_mode() != kDeviceModeLidar) {
     return kStatusNotSupported;
+  }
+
+  if (device_manager().IsLidarMid40(handle)) {
+    uint32_t firm_ver = 0;
+    // Mid40 firmware version 03.07.0000
+    uint32_t min_firm_ver = (uint32_t)3 << 24 | 7 << 16 | 0 << 8 | 0;
+    device_manager().GetLidarFirmwareVersion(handle, firm_ver);
+    if (firm_ver < min_firm_ver) {
+      return kStatusNotSupported;
+    }
   }
  
   LidarSetUtcSyncTimeRequest utc_time_req;
