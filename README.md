@@ -71,11 +71,11 @@ You can now compile the Livox SDK in Visual Studio.
 
 ### 4.1.3 ARM-Linux Cross Compile
 
-The procedure of cross compile Livox-SDK in ARM-Linux are shown below。
+The procedure of cross compile Livox-SDK in ARM-Linux are shown below.
 
 #### Dependencies
 
-Host machine requires install cmake and gcc。You can install these packages using apt:
+Host machine requires install cmake and gcc. You can install these packages using apt:
 
 ```
 sudo apt install cmake gcc
