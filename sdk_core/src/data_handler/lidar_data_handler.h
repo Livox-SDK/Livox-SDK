@@ -25,9 +25,8 @@
 #ifndef LIVOX_LIDAR_DATA_HANDLER_H_
 #define LIVOX_LIDAR_DATA_HANDLER_H_
 
-#include <boost/shared_ptr.hpp>
-#include <boost/smart_ptr/scoped_array.hpp>
-#include <boost/thread/mutex.hpp>
+#include <memory>
+#include <mutex>
 #include "data_handler.h"
 #include "device_manager.h"
 
@@ -46,14 +45,14 @@ class LidarDataHandlerImpl : public DataHandlerImpl {
  private:
   typedef struct {
     apr_socket_t *sock;
-    boost::shared_ptr<IOThread> thread;
+    std::shared_ptr<IOThread> thread;
     uint16_t handle;
   } DeviceItem;
   std::list<DeviceItem> devices_;
 
-  boost::array<boost::scoped_array<char>, kMaxConnectedDeviceNum> data_buffers_;
+  std::array<std::unique_ptr<char[]>, kMaxConnectedDeviceNum> data_buffers_;
   apr_pool_t *mem_pool_;
-  boost::mutex mutex_;
+  std::mutex mutex_;
 };
 
 }  // namespace livox

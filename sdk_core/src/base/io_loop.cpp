@@ -23,14 +23,13 @@
 //
 
 #include "io_loop.h"
-#include <boost/bind.hpp>
-#include <boost/thread/lock_guard.hpp>
-#include <boost/thread/locks.hpp>
+#include <functional>
+#include <mutex>
 #include <iostream>
 #include "logging.h"
 
-using boost::lock_guard;
-using boost::mutex;
+using std::lock_guard;
+using std::mutex;
 using std::vector;
 
 namespace livox {
@@ -40,13 +39,8 @@ bool IOLoop::Init() {
     return false;
   }
 
-#ifdef WIN32
   apr_status_t rv =
       apr_pollset_create(&pollset_, kMaxPollCount, mem_pool_, APR_POLLSET_WAKEABLE);
-#else
-  apr_status_t rv =
-      apr_pollset_create(&pollset_, kMaxPollCount, mem_pool_, APR_POLLSET_THREADSAFE | APR_POLLSET_WAKEABLE);
-#endif
 
   if (rv != APR_SUCCESS) {
     LOG_ERROR(PrintAPRStatus(rv));
@@ -74,11 +68,11 @@ void IOLoop::Uninit() {
 }
 
 void IOLoop::AddDelegate(apr_socket_t *sock, IOLoop::IOLoopDelegate *delegate, void *data) {
-  PostTask(boost::bind(&IOLoop::AddDelegateAsync, this, sock, delegate, data));
+  PostTask(std::bind(&IOLoop::AddDelegateAsync, this, sock, delegate, data));
 }
 
 void IOLoop::RemoveDelegate(apr_socket_t *sock, IOLoopDelegate *) {
-  PostTask(boost::bind(&IOLoop::RemoveDelegateAsync, this, sock));
+  PostTask(std::bind(&IOLoop::RemoveDelegateAsync, this, sock));
 }
 
 void IOLoop::RemoveDelegateSync(apr_socket_t *sock) {
@@ -97,7 +91,7 @@ void IOLoop::Loop() {
       if (data) {
         IOLoopDelegate *delegate = data->first;
         if (delegate) {
-          delegate->OnData(ret_pfd->desc.s, data->second);
+          delegate->OnData(ret_pfd[i].desc.s, data->second);
         }
       }
     }

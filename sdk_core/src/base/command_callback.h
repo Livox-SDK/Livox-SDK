@@ -25,8 +25,8 @@
 #ifndef LIVOX_COMMAND_CALLBACK_H
 #define LIVOX_COMMAND_CALLBACK_H
 
-#include <boost/function.hpp>
-#include <boost/smart_ptr.hpp>
+#include <functional>
+#include <memory>
 #include "livox_sdk.h"
 
 namespace livox {
@@ -76,9 +76,9 @@ class MemberFunctionCallback<T, uint8_t> : public CommandCallback {
 };
 
 template <class T, class ResponseType>
-boost::shared_ptr<CommandCallback> MakeCommandCallback(T *cls,
+std::shared_ptr<CommandCallback> MakeCommandCallback(T *cls,
                                                        typename MemberFunctionCallback<T, ResponseType>::MemFn func) {
-  boost::shared_ptr<CommandCallback> cb(new MemberFunctionCallback<T, ResponseType>(cls, func));
+  std::shared_ptr<CommandCallback> cb(new MemberFunctionCallback<T, ResponseType>(cls, func));
   return cb;
 }
 
@@ -123,8 +123,8 @@ class FunctionStatusCallback<uint8_t> : public CommandCallback {
 };
 
 template <class T>
-boost::shared_ptr<CommandCallback> MakeCommandCallback(typename FunctionStatusCallback<T>::Fn func, void *client_data) {
-  boost::shared_ptr<CommandCallback> cb(new FunctionStatusCallback<T>(func, client_data));
+std::shared_ptr<CommandCallback> MakeCommandCallback(typename FunctionStatusCallback<T>::Fn func, void *client_data) {
+  std::shared_ptr<CommandCallback> cb(new FunctionStatusCallback<T>(func, client_data));
   return cb;
 }
 
@@ -148,7 +148,7 @@ class MessageCallback : public CommandCallback {
 template <class ResponseType>
 class BoostFunctionMessageCallback : public CommandCallback {
  public:
-  typedef boost::function<void(livox_status, uint8_t, ResponseType *)> Fn;
+  typedef std::function<void(livox_status, uint8_t, ResponseType *)> Fn;
 
  public:
   BoostFunctionMessageCallback(const Fn &func) : func_(func) {}
@@ -163,14 +163,14 @@ class BoostFunctionMessageCallback : public CommandCallback {
 };
 
 template <class T>
-boost::shared_ptr<CommandCallback> MakeMessageCallback(typename MessageCallback<T>::Fn func) {
-  boost::shared_ptr<CommandCallback> cb(new MessageCallback<T>(func));
+std::shared_ptr<CommandCallback> MakeMessageCallback(typename MessageCallback<T>::Fn func) {
+  std::shared_ptr<CommandCallback> cb(new MessageCallback<T>(func));
   return cb;
 }
 
 template <class T>
-boost::shared_ptr<CommandCallback> MakeMessageCallback(typename BoostFunctionMessageCallback<T>::Fn func) {
-  boost::shared_ptr<CommandCallback> cb(new BoostFunctionMessageCallback<T>(func));
+std::shared_ptr<CommandCallback> MakeMessageCallback(typename BoostFunctionMessageCallback<T>::Fn func) {
+  std::shared_ptr<CommandCallback> cb(new BoostFunctionMessageCallback<T>(func));
   return cb;
 }
 
@@ -192,17 +192,17 @@ class MemberMessageCallback : public CommandCallback {
 };
 
 template <class T, class ResponseType>
-boost::shared_ptr<CommandCallback> MakeMemberMessageCallback(
+std::shared_ptr<CommandCallback> MakeMemberMessageCallback(
     T *_this,
     typename MemberMessageCallback<T, ResponseType>::MemFn func) {
-  boost::shared_ptr<CommandCallback> cb(new MemberMessageCallback<T, ResponseType>(_this, func));
+  std::shared_ptr<CommandCallback> cb(new MemberMessageCallback<T, ResponseType>(_this, func));
   return cb;
 }
 
 template <class ResponseType>
 class BoostFunctionCallback : public CommandCallback {
  public:
-  typedef boost::function<void(uint8_t, uint8_t, ResponseType *)> Fn;
+  typedef std::function<void(uint8_t, uint8_t, ResponseType *)> Fn;
   BoostFunctionCallback(const Fn &func) : func_(func) {}
   void operator()(livox_status status,uint8_t handle, void *data) {
     if (func_) {
@@ -221,7 +221,7 @@ class BoostFunctionCallback : public CommandCallback {
 template <>
 class BoostFunctionCallback<uint8_t> : public CommandCallback {
  public:
-  typedef boost::function<void(uint8_t, uint8_t, uint8_t)> Fn;
+  typedef std::function<void(uint8_t, uint8_t, uint8_t)> Fn;
   BoostFunctionCallback(const Fn &func) : func_(func) {}
   void operator()(livox_status status,uint8_t handle, void *data) {
     if (func_) {
@@ -238,8 +238,8 @@ class BoostFunctionCallback<uint8_t> : public CommandCallback {
 };
 
 template <class ResponseType>
-boost::shared_ptr<CommandCallback> MakeCommandCallback(const typename BoostFunctionCallback<ResponseType>::Fn &func) {
-  boost::shared_ptr<CommandCallback> cb(new BoostFunctionCallback<ResponseType>(func));
+std::shared_ptr<CommandCallback> MakeCommandCallback(const typename BoostFunctionCallback<ResponseType>::Fn &func) {
+  std::shared_ptr<CommandCallback> cb(new BoostFunctionCallback<ResponseType>(func));
   return cb;
 }
 

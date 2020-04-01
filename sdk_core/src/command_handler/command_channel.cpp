@@ -23,15 +23,15 @@
 //
 
 #include "command_channel.h"
-#include <boost/bind.hpp>
+#include <functional>
+#include <atomic>
 #include "base/logging.h"
 #include "base/network_util.h"
 #include "command_impl.h"
 #include "device_manager.h"
 #include "livox_def.h"
 
-using boost::atomic_uint16_t;
-using boost::bind;
+using std::bind;
 using std::list;
 using std::make_pair;
 using std::map;
@@ -182,7 +182,7 @@ void CommandChannel::HeartBeat(apr_time_t t) {
                     NULL,
                     0,
                     0,
-                    boost::shared_ptr<CommandCallback>());
+                    std::shared_ptr<CommandCallback>());
     SendInternal(command);
   }
 }
@@ -207,7 +207,7 @@ void CommandChannel::SendInternal(const Command &command) {
 }
 
 uint16_t CommandChannel::GenerateSeq() {
-  static atomic_uint16_t seq(1);
+  static std::atomic<std::uint16_t> seq(1);
   uint16_t value = seq.load();
   uint16_t desired = 0;
   do {

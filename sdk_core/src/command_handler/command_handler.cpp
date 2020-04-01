@@ -23,17 +23,16 @@
 //
 
 #include "command_handler.h"
-#include <boost/thread/lock_guard.hpp>
-#include <boost/thread/locks.hpp>
+#include <mutex>
 #include "base/logging.h"
 #include "command_impl.h"
 #include "device_manager.h"
 #include "hub_command_handler.h"
 #include "lidar_command_handler.h"
 
-using boost::lock_guard;
-using boost::mutex;
-using boost::shared_ptr;
+using std::lock_guard;
+using std::mutex;
+using std::shared_ptr;
 using std::list;
 using std::make_pair;
 using std::multimap;

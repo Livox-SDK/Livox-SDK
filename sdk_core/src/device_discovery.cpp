@@ -24,8 +24,7 @@
 
 #include "device_discovery.h"
 #include <algorithm>
-#include <boost/thread/lock_guard.hpp>
-#include <boost/thread/locks.hpp>
+#include <mutex>
 #include <iostream>
 #include <vector>
 #include "apr_network_io.h"
@@ -41,7 +40,7 @@
 #include "device_manager.h"
 #include "livox_def.h"
 
-using boost::tuple;
+using std::tuple;
 using std::string;
 using std::vector;
 
@@ -97,10 +96,10 @@ void DeviceDiscovery::OnData(apr_socket_t *sock, void *) {
       if (connecting_devices_.find(sock) == connecting_devices_.end()) {
         continue;
       }
-      DeviceInfo info = boost::get<2>(connecting_devices_[sock]);
+      DeviceInfo info = std::get<2>(connecting_devices_[sock]);
       loop_->RemoveDelegate(sock, this);
       apr_socket_close(sock);
-      apr_pool_destroy(boost::get<0>(connecting_devices_[sock]));
+      apr_pool_destroy(std::get<0>(connecting_devices_[sock]));
       connecting_devices_.erase(sock);
 
       if (packet.data == NULL) {
@@ -124,10 +123,10 @@ void DeviceDiscovery::OnTimer(apr_time_t now) {
   ConnectingDeviceMap::iterator ite = connecting_devices_.begin();
   while (ite != connecting_devices_.end()) {
     tuple<apr_pool_t *, apr_time_t, DeviceInfo> &device_tuple = ite->second;
-    if (now - boost::get<1>(device_tuple) > apr_time_from_msec(500)) {
+    if (now - std::get<1>(device_tuple) > apr_time_from_msec(500)) {
       loop_->RemoveDelegate(ite->first, this);
       apr_socket_close(ite->first);
-      apr_pool_destroy(boost::get<0>(device_tuple));
+      apr_pool_destroy(std::get<0>(device_tuple));
       connecting_devices_.erase(ite++);
     } else {
       ++ite;
@@ -211,8 +210,8 @@ void DeviceDiscovery::OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr
 
   loop_->AddDelegate(cmd_sock, this);
   OnTimer(apr_time_now());
-  boost::get<0>(connecting_devices_[cmd_sock]) = pool;
-  boost::get<2>(connecting_devices_[cmd_sock]) = lidar_info;
+  std::get<0>(connecting_devices_[cmd_sock]) = pool;
+  std::get<2>(connecting_devices_[cmd_sock]) = lidar_info;
 
   bool result = false;
   do {
@@ -247,7 +246,7 @@ void DeviceDiscovery::OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr
       result = false;
       break;
     }
-    boost::get<1>(connecting_devices_[cmd_sock]) = apr_time_now();
+    std::get<1>(connecting_devices_[cmd_sock]) = apr_time_now();
     result = true;
   } while (0);
 

@@ -23,17 +23,16 @@
 //
 
 #include "device_manager.h"
-#include <boost/atomic.hpp>
-#include <boost/thread/lock_guard.hpp>
-#include <boost/thread/locks.hpp>
+#include <atomic>
+#include <mutex>
 #include <vector>
 #include "base/logging.h"
 #include "command_handler/command_handler.h"
 #include "command_handler/command_impl.h"
 #include "data_handler/data_handler.h"
 
-using boost::lock_guard;
-using boost::mutex;
+using std::lock_guard;
+using std::mutex;
 using std::string;
 using std::vector;
 
@@ -113,25 +112,31 @@ void DeviceManager::BroadcastDevices(const BroadcastDeviceInfo *info) {
 }
 
 void DeviceManager::UpdateDevices(const DeviceInfo &device, DeviceEvent type) {
-  if (device_mode_ == kDeviceModeLidar && connected_cb_) {
-    connected_cb_(&device, type);
+  if (device_mode_ == kDeviceModeLidar && type == kEventConnect) {
+     command_handler().SendCommand(device.handle,
+                                  kCommandSetGeneral,
+                                  kCommandIDGeneralDeviceInfo,
+                                  NULL,
+                                  0,
+                                  MakeCommandCallback<DeviceManager, DeviceInformationResponse>(
+                                      this, &DeviceManager::QueryDeviceInformationCallback));
+    return;
   }
 
-  if (device_mode_ == kDeviceModeHub) {
-    if (type == kEventHubConnectionChange) {
-      LOG_DEBUG("Send Query lidars command");
-      command_handler().SendCommand(kHubDefaultHandle,
-                                    kCommandSetHub,
-                                    kCommandIDHubQueryLidarInformation,
-                                    NULL,
-                                    0,
-                                    MakeCommandCallback<DeviceManager, HubQueryLidarInformationResponse>(
-                                        this, &DeviceManager::HubLidarInfomationCallback));
-    } else {
-      if (connected_cb_) {
-        connected_cb_(&device, type);
-      }
-    }
+  if (device_mode_ == kDeviceModeHub && type == kEventHubConnectionChange) {
+    LOG_DEBUG("Send Query lidars command");
+    command_handler().SendCommand(kHubDefaultHandle,
+                                  kCommandSetHub,
+                                  kCommandIDHubQueryLidarInformation,
+                                  NULL,
+                                  0,
+                                  MakeCommandCallback<DeviceManager, HubQueryLidarInformationResponse>(
+                                      this, &DeviceManager::HubLidarInfomationCallback));
+    return;
+  }
+
+  if (connected_cb_) {
+    connected_cb_(&device, type);
   }
 }
 
@@ -152,6 +157,11 @@ void DeviceManager::HubLidarInfomationCallback(livox_status status, uint8_t, Hub
           strncpy(
               info.info.broadcast_code, response->device_info_list[i].broadcast_code, sizeof(info.info.broadcast_code));
           info.info.handle = index;
+          info.info.type = response->device_info_list[i].dev_type;
+          info.info.slot = response->device_info_list[i].slot;
+          info.info.id = response->device_info_list[i].id;
+          memcpy(
+            info.info.firmware_version, response->device_info_list[i].version, sizeof(info.info.firmware_version));
         }
       }
     }
@@ -160,6 +170,24 @@ void DeviceManager::HubLidarInfomationCallback(livox_status status, uint8_t, Hub
     }
   } else {
     LOG_ERROR("Failed to query lidars information connected to hub.");
+  }
+}
+
+void DeviceManager::QueryDeviceInformationCallback(livox_status status, uint8_t handle, DeviceInformationResponse *response) {
+  if (status == kStatusSuccess) {
+    {
+      lock_guard<mutex> lock(mutex_);
+      if (handle < devices_.size()) {
+        DetailDeviceInfo &info = devices_[handle];
+        memcpy(
+          info.info.firmware_version, response->firmware_version, sizeof(response->firmware_version));
+      }
+    }
+    if (connected_cb_) {
+      connected_cb_(&devices_[handle].info, kEventConnect);
+    }
+  } else {
+    LOG_ERROR("Failed to query lidar information.");
   }
 }
 
@@ -271,6 +299,15 @@ bool DeviceManager::IsLidarMid40(uint8_t handle) {
     return true;
   }
   return false;
+}
+
+bool DeviceManager::GetLidarFirmwareVersion(uint8_t handle, uint32_t &firmware_version) {
+  if (handle > devices_.size()) {
+    return false;
+  }
+  uint8_t *firm_ver = devices_[handle].info.firmware_version;
+  firmware_version = firm_ver[0] << 24 | firm_ver[1] << 16 | firm_ver[2] << 8 | firm_ver[3];
+  return true;
 }
 
 DeviceManager &device_manager() {

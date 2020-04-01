@@ -31,51 +31,98 @@ Livox SDK API provides a set of C style functions which can be conveniently inte
 The installation procedures in Ubuntu 18.04/16.04/14.04 LTS and Windows 7/10 are shown here as examples. For Ubuntu 18.04/16.04/14.04 32-bit LTS and Mac, you can get it in [Livox-SDK wiki](https://github.com/Livox-SDK/Livox-SDK/wiki).
 ### 4.1.1 Ubuntu 18.04/16.04/14.04 LTS
 #### Dependencies
-Livox SDK requires [CMake 3.0.0+](https://cmake.org/), [Apache Portable Runtime (APR) 1.61+](http://apr.apache.org/) and [Boost 1.54+](https://www.boost.org/) as dependencies. You can install these packages using apt:
+Livox SDK requires [CMake 3.0.0+](https://cmake.org/) as dependencies. You can install these packages using apt:
 ```
-sudo apt install cmake pkg-config libapr1-dev libboost-atomic-dev libboost-system-dev
+sudo apt install cmake pkg-config
 ```
 #### Compile Livox SDK
+
 In the Livox SDK directory, run the following commands to compile the project:
 ```
 git clone https://github.com/Livox-SDK/Livox-SDK.git
-cd Livox-SDK/build
-cmake ..
+cd Livox-SDK
+sudo ./third_party/apr/apr_build.sh
+cd build && cmake ..
 make
 sudo make install
 ```
 ### 4.1.2 Windows 7/10
 #### Dependencies
-Livox SDK supports Visual Studio 2015/2017 and requires [CMake 3.0.0+](https://cmake.org/), [Apache Portable Runtime (APR) 1.61+](http://apr.apache.org/) and [Boost 1.54+](https://www.boost.org/) as dependencies. [vcpkg](https://github.com/Microsoft/vcpkg) is recommended for building the dependency libraries as follows:
-For the 32-bit project:
-```
-.\vcpkg install apr
-.\vcpkg install boost-atomic
-.\vcpkg install boost-system
-.\vcpkg install boost-thread
-.\vcpkg integrate install
-```
-For the 64-bit project:
-```
-.\vcpkg install apr:x64-windows
-.\vcpkg install boost-atomic:x64-windows
-.\vcpkg install boost-system:x64-windows
-.\vcpkg install boost-thread:x64-windows
-.\vcpkg integrate install
-```
-Then, in the Livox SDK directory, run the following commands to create the Visual Studio solution file. Please replace [vcpkgroot] with your vcpkg installation path.
+Livox SDK supports Visual Studio 2015/2017 and requires install [CMake 3.0.0+](https://cmake.org/) as dependencies.  
+
+In the Livox SDK directory, run the following commands to create the Visual Studio solution file. 
 Generate the 32-bit project:
+
 ```
+cd Livox-SDK
+.\third_party\apr\apr_build.bat
 cd build && \
-cmake .. "-DCMAKE_TOOLCHAIN_FILE=[vcpkgroot]\scripts\buildsystems\vcpkg.cmake"
+cmake ..
 ```
 Generate the 64-bit project:
 ```
+cd Livox-SDK
+.\third_party\apr\apr_build.bat amd64
 cd build && \
-cmake .. -G "Visual Studio 15 2017 Win64" "-DCMAKE_TOOLCHAIN_FILE=[vcpkgroot]\scripts\buildsystems\vcpkg.cmake"
+cmake .. -G "Visual Studio 15 2017 Win64"
 ```
 #### Compile Livox SDK
 You can now compile the Livox SDK in Visual Studio.
+
+### 4.1.3 ARM-Linux Cross Compile
+
+The procedure of cross compile Livox-SDK in ARM-Linux are shown below。
+
+#### Dependencies
+
+Host machine requires install cmake and gcc。You can install these packages using apt:
+
+```
+sudo apt install cmake gcc
+```
+
+#### Cross Compile Toolchain
+
+If your ARM board vendor provides a cross compile toolchain, you can skip the following step of installing the toolchain and use the vendor-supplied cross compile toolchain instead.
+
+The following commands will install C and C++ cross compiler toolchains for 32bit and 64bit ARM board. You need to install the correct toolchain for your ARM board. For 64bit SoC ARM board, only install 64bit toolchain, and for 32bit SoC ARM board, only install 32bit toolchain.
+
+Install **ARM 32 bits cross compile toolchain**：
+
+```
+ sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
+```
+
+Install **ARM 64 bits cross compile toolchain**：
+
+```
+sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+```
+
+#### Cross Compile Livox-SDK
+
+For  **ARM 32 bits toolchain**，In the Livox SDK directory，run the following commands to cross compile the project:
+
+```
+cd Livox-SDK
+cd build && \
+cmake .. -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_C_COMPILER=arm-linux-gnueabi-gcc -DCMAKE_CXX_COMPILER=arm-linux-gnueabi-g++
+make
+```
+
+For **ARM 64 bits toolchain**，In the Livox SDK directory，run the following commands to cross compile the project:
+
+```
+cd Livox-SDK
+cd build && \
+cmake .. -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++
+make
+```
+
+**Note:**
+
+- gcc  cross compiler need to support C ++11 standard
+
 ## 4.2 Run Livox SDK Sample
 Two samples are provided in Sample/Lidar and Sample/Hub, which demonstrate how to configure Livox LiDAR units and receive the point cloud data when directly connecting Livox SDK to LiDAR units or by using a Livox Hub, respectively. The sequence diagram is shown as below: 
 

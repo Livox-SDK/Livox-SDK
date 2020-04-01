@@ -23,13 +23,12 @@
 //
 
 #include "lidar_data_handler.h"
-#include <boost/thread/lock_guard.hpp>
-#include <boost/thread/locks.hpp>
+#include <mutex>
 #include "base/network_util.h"
 
-using boost::lock_guard;
-using boost::mutex;
-using boost::shared_ptr;
+using std::lock_guard;
+using std::mutex;
+using std::shared_ptr;
 using std::list;
 
 namespace livox {
@@ -64,7 +63,7 @@ bool LidarDataHandlerImpl::AddDevice(const DeviceInfo &info) {
     return false;
   }
 
-  shared_ptr<IOThread> thread = boost::make_shared<IOThread>();
+  shared_ptr<IOThread> thread = std::make_shared<IOThread>();
   thread->Init(false, false);
   thread->loop()->AddDelegate(sock, this, reinterpret_cast<void *>(info.handle));
   {
@@ -106,7 +105,7 @@ void LidarDataHandlerImpl::OnData(apr_socket_t *sock, void *client_data) {
   if (handle > data_buffers_.size()) {
     return;
   }
-  boost::scoped_array<char> &buf = data_buffers_[handle];
+  std::unique_ptr<char[]> &buf = data_buffers_[handle];
   if (buf.get() == NULL) {
     buf.reset(new char[kMaxBufferSize]);
   }

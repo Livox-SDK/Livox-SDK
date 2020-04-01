@@ -25,9 +25,9 @@
 #ifndef LIVOX_DEVICE_MANAGER_H_
 #define LIVOX_DEVICE_MANAGER_H_
 
-#include <boost/array.hpp>
-#include <boost/function.hpp>
-#include <boost/thread/mutex.hpp>
+#include <array>
+#include <functional>
+#include <mutex>
 #include <string>
 #include "device_discovery.h"
 #include "livox_sdk.h"
@@ -88,13 +88,14 @@ class DeviceManager : public noncopyable {
    */
   bool IsDeviceConnected(uint8_t handle);
 
-  void SetDeviceConnectedCallback(const boost::function<void(const DeviceInfo *, DeviceEvent)> &cb) {
+  void SetDeviceConnectedCallback(const std::function<void(const DeviceInfo *, DeviceEvent)> &cb) {
     connected_cb_ = cb;
   }
-  void SetDeviceBroadcastCallback(const boost::function<void(const BroadcastDeviceInfo *info)> &cb) {
+  void SetDeviceBroadcastCallback(const std::function<void(const BroadcastDeviceInfo *info)> &cb) {
     broadcast_cb_ = cb;
   }
   void HubLidarInfomationCallback(livox_status status, uint8_t handle, HubQueryLidarInformationResponse *response);
+  void QueryDeviceInformationCallback(livox_status status, uint8_t handle, DeviceInformationResponse *response);
   DeviceMode device_mode() { return device_mode_; }
   void BroadcastDevices(const BroadcastDeviceInfo *info);
   void UpdateDevices(const DeviceInfo &device, DeviceEvent type);
@@ -102,6 +103,7 @@ class DeviceManager : public noncopyable {
   void GetConnectedDevices(std::vector<DeviceInfo> &devices);
   bool AddListeningDevice(const std::string &broadcast_code, DeviceMode mode, uint8_t &handle);
   bool IsLidarMid40(uint8_t handle);
+  bool GetLidarFirmwareVersion(uint8_t handle, uint32_t &firmware_version);
 
  private:
   typedef struct _DetailDeviceInfo {
@@ -116,7 +118,8 @@ class DeviceManager : public noncopyable {
                       uint32_t type,
                       uint16_t data_port,
                       uint16_t cmd_port,
-                      const char *ip) {
+                      const char *ip,
+                      const uint8_t *firmware_version) {
       connected = _connected;
       strncpy(info.broadcast_code, broadcast_code, sizeof(info.broadcast_code));
       info.handle = handle;
@@ -126,6 +129,7 @@ class DeviceManager : public noncopyable {
       info.data_port = data_port;
       info.cmd_port = cmd_port;
       strncpy(info.ip, ip, sizeof(info.ip));
+      memcpy(info.firmware_version, firmware_version, sizeof(info.firmware_version));
     }
     void clear() {
       connected = false;
@@ -137,15 +141,16 @@ class DeviceManager : public noncopyable {
       info.data_port = 0;
       info.cmd_port = 0;
       memset(info.ip, 0, sizeof(info.ip));
+      memset(info.firmware_version, 0, sizeof(info.firmware_version));
     };
   } DetailDeviceInfo;
-  typedef boost::array<DetailDeviceInfo, kMaxConnectedDeviceNum> DeviceContainer;
+  typedef std::array<DetailDeviceInfo, kMaxConnectedDeviceNum> DeviceContainer;
   DeviceContainer devices_;
   apr_pool_t *mem_pool_;
   DeviceMode device_mode_;
-  boost::function<void(const DeviceInfo *, DeviceEvent)> connected_cb_;
-  boost::function<void(const BroadcastDeviceInfo *info)> broadcast_cb_;
-  boost::mutex mutex_;
+  std::function<void(const DeviceInfo *, DeviceEvent)> connected_cb_;
+  std::function<void(const BroadcastDeviceInfo *info)> broadcast_cb_;
+  std::mutex mutex_;
 };
 
 DeviceManager &device_manager();

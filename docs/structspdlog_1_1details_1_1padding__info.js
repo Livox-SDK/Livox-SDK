@@ -7,7 +7,7 @@ var structspdlog_1_1details_1_1padding__info =
     ] ],
     [ "padding_info", "structspdlog_1_1details_1_1padding__info.html#a2ebd71cdda444c97eba736828179b573", null ],
     [ "padding_info", "structspdlog_1_1details_1_1padding__info.html#a51160b4df2aeb08f476d78d8af4c3851", null ],
-    [ "enabled", "structspdlog_1_1details_1_1padding__info.html#a2c315d1c5ccdac54957d3d9281830ea9", null ],
+    [ "enabled", "structspdlog_1_1details_1_1padding__info.html#a009f766013195390ec24ce96804a1e3f", null ],
     [ "side_", "structspdlog_1_1details_1_1padding__info.html#af03346e385de821038e0aec989741d14", null ],
     [ "width_", "structspdlog_1_1details_1_1padding__info.html#abf18e8b1249987bf04dad4f368e6d91a", null ]
 ];

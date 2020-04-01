@@ -40,6 +40,11 @@ extern "C" {
 void GetLivoxSdkVersion(LivoxSdkVersion *version);
 
 /**
+ * Disable console log output.
+ */
+void DisableConsoleLogger();
+
+/**
  * Initialize the SDK.
  * @return true if successfully initialized, otherwise false.
  */
@@ -303,7 +308,7 @@ livox_status GetDeviceIpInformation(uint8_t handle, GetDeviceIpInformationCallba
 
 /**
  * Reboot device.
- * @note \ref RebootDevice is not supported for Mid40/100
+ * @note \ref RebootDevice is not supported for Mid40/100 firmware version < 03.07.0000.
  * @param  handle        device handle.
  * @param  timeout       reboot device after [timeout] ms.
  * @param  cb            callback for the command.
@@ -822,6 +827,7 @@ livox_status LidarGetImuPushFrequency(uint8_t handle, LidarGetImuPushFrequencyCa
 
 /**
  * Set GPRMC formate synchronization time.
+ * @note \ref LidarSetRmcSyncTime is not supported for Mid40/100 firmware version < 03.07.0000.
  * @param  handle        device handle.
  * @param  rmc           GPRMC\GNRMC format data.
  * @param  rmc_length    lenth of gprmc.
@@ -837,6 +843,7 @@ livox_status LidarSetRmcSyncTime(uint8_t handle,
 
 /**
  * Set UTC formate synchronization time.
+ * @note \ref LidarSetUtcSyncTime is not supported for Mid40/100 firmware version < 03.07.0000.
  * @param  handle        device handle.
  * @param  req           UTC format data.
  * @param  cb            callback for the command.

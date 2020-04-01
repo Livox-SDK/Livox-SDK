@@ -221,10 +221,10 @@ var hierarchy =
     [ "fmt::v5::internal::format_string_checker< Char, ErrorHandler, Args >", "classfmt_1_1v5_1_1internal_1_1format__string__checker.html", null ],
     [ "fmt::v5::format_to_n_args< OutputIt, Char >", "structfmt_1_1v5_1_1format__to__n__args.html", null ],
     [ "fmt::v5::format_to_n_result< OutputIt >", "structfmt_1_1v5_1_1format__to__n__result.html", null ],
-    [ "fmt::v5::formatter< T, Char, Enable >", "structfmt_1_1v5_1_1formatter.html", null ],
     [ "spdlog::formatter", "classspdlog_1_1formatter.html", [
       [ "spdlog::pattern_formatter", "classspdlog_1_1pattern__formatter.html", null ]
     ] ],
+    [ "fmt::v5::formatter< T, Char, Enable >", "structfmt_1_1v5_1_1formatter.html", null ],
     [ "fmt::v5::formatter< basic_string_view< Char >, Char >", "structfmt_1_1v5_1_1formatter.html", [
       [ "fmt::v5::formatter< T, Char, typename std::enable_if< internal::is_streamable< T, Char >::value &&!internal::format_type< typename buffer_context< Char >::type, T >::value >::type >", "structfmt_1_1v5_1_1formatter_3_01_t_00_01_char_00_01typename_01std_1_1enable__if_3_01internal_1_a6b64300f4f7ee1d24250c7c28e1fdc2.html", null ]
     ] ],
@@ -316,10 +316,6 @@ var hierarchy =
     [ "fmt::v5::internal::int_checker< true >", "structfmt_1_1v5_1_1internal_1_1int__checker_3_01true_01_4.html", null ],
     [ "fmt::v5::internal::int_traits< T >", "structfmt_1_1v5_1_1internal_1_1int__traits.html", null ],
     [ "fmt::v5::internal::int_traits< Int >", "structfmt_1_1v5_1_1internal_1_1int__traits.html", null ],
-    [ "fmt::v5::internal::integer_sequence< T, N >", "structfmt_1_1v5_1_1internal_1_1integer__sequence.html", null ],
-    [ "fmt::v5::internal::integer_sequence< T, Ns... >", "structfmt_1_1v5_1_1internal_1_1integer__sequence.html", [
-      [ "fmt::v5::internal::make_integer_sequence< T, 0, Ns... >", "structfmt_1_1v5_1_1internal_1_1make__integer__sequence_3_01_t_00_010_00_01_ns_8_8_8_01_4.html", null ]
-    ] ],
     [ "integral_constant", null, [
       [ "fmt::v5::convert_to_int< T, Char, Enable >", "structfmt_1_1v5_1_1convert__to__int.html", null ],
       [ "fmt::v5::internal::format_type< Context, T >", "structfmt_1_1v5_1_1internal_1_1format__type.html", null ],
@@ -338,7 +334,6 @@ var hierarchy =
     [ "fmt::v5::is_range< T >", "structfmt_1_1v5_1_1is__range.html", null ],
     [ "fmt::v5::internal::is_streamable< T, Char >", "classfmt_1_1v5_1_1internal_1_1is__streamable.html", null ],
     [ "fmt::v5::is_tuple_like< T >", "structfmt_1_1v5_1_1is__tuple__like.html", null ],
-    [ "fmt::v5::internal::is_tuple_like_< T >", "classfmt_1_1v5_1_1internal_1_1is__tuple__like__.html", null ],
     [ "fmt::v5::internal::it_category< T * >", "structfmt_1_1v5_1_1internal_1_1it__category_3_01_t_01_5_01_4.html", null ],
     [ "fmt::v5::internal::it_category< T, typename void_< typename T::iterator_category >::type >", "structfmt_1_1v5_1_1internal_1_1it__category_3_01_t_00_01typename_01void___3_01typename_01_t_1_1id61388ae7521fb5f9bdb01fd14083b7f.html", null ],
     [ "LidarErrorCode", "struct_lidar_error_code.html", null ],
@@ -365,7 +360,6 @@ var hierarchy =
     [ "spdlog::logger", "classspdlog_1_1logger.html", [
       [ "spdlog::async_logger", "classspdlog_1_1async__logger.html", null ]
     ] ],
-    [ "fmt::v5::internal::make_integer_sequence< T, N, Ns >", "structfmt_1_1v5_1_1internal_1_1make__integer__sequence.html", null ],
     [ "make_unsigned", null, [
       [ "fmt::v5::internal::make_unsigned_or_bool< T >", "structfmt_1_1v5_1_1internal_1_1make__unsigned__or__bool.html", null ]
     ] ],
@@ -445,7 +439,6 @@ var hierarchy =
     [ "spdlog::details::thread_pool", "classspdlog_1_1details_1_1thread__pool.html", null ],
     [ "true_type", null, [
       [ "fmt::v5::internal::is_like_std_string< fmt::basic_string_view< Char > >", "structfmt_1_1v5_1_1internal_1_1is__like__std__string_3_01fmt_1_1basic__string__view_3_01_char_01_4_01_4.html", null ],
-      [ "fmt::v5::internal::is_range_< T, typename std::conditional< false, conditional_helper< decltype(internal::declval< T >().begin()), decltype(internal::declval< T >().end())>, void >::type >", "structfmt_1_1v5_1_1internal_1_1is__range___3_01_t_00_01typename_01std_1_1conditional_3_01false_00543cac082ebea7893cc13a711f6eb2b.html", null ],
       [ "fmt::v5::is_contiguous< internal::basic_buffer< Char > >", "structfmt_1_1v5_1_1is__contiguous_3_01internal_1_1basic__buffer_3_01_char_01_4_01_4.html", null ],
       [ "fmt::v5::is_contiguous< std::basic_string< Char > >", "structfmt_1_1v5_1_1is__contiguous_3_01std_1_1basic__string_3_01_char_01_4_01_4.html", null ]
     ] ],

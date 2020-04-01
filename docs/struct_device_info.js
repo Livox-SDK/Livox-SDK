@@ -4,6 +4,7 @@ var struct_device_info =
     [ "cmd_port", "struct_device_info.html#abb8bbc33f437058af59aa6611137b2f1", null ],
     [ "data_port", "struct_device_info.html#aa3d0a3e3476880be7d9735fc91929024", null ],
     [ "feature", "struct_device_info.html#a1ddd6dc50ae7fe4230b3fa0e2644fb60", null ],
+    [ "firmware_version", "struct_device_info.html#af08f65156144e883cb230110740dac75", null ],
     [ "handle", "struct_device_info.html#a2ae13df05166a303b5ba98ff8dd2510f", null ],
     [ "id", "struct_device_info.html#a1025610698d5ebb8748e420b0dc0f827", null ],
     [ "ip", "struct_device_info.html#aac0da89d608c3395b193adf4fd5bd3f3", null ],

@@ -51,6 +51,7 @@
 
 extern std::shared_ptr<spdlog::logger> logger;
 extern bool is_save_log_file;
+extern bool is_console_log_enable;
 
 void InitLogger();
 void UninitLogger();

@@ -40,7 +40,7 @@ var common_8h =
       [ "utc", "common_8h.html#ad598fbd8338772e66ae09e8723a07ceda52d33cb937bbdab234ab1729a0f8225b", null ]
     ] ],
     [ "from_str", "common_8h.html#af1f71a172e3626a0271006a3a668e6ff", null ],
-    [ "make_unique", "common_8h.html#a2d61216ea1cb33ba27ddc6a78cc98ecd", null ],
+    [ "make_unique", "common_8h.html#a56e97a2b660d245b5988427c650cbe63", null ],
     [ "to_short_c_str", "common_8h.html#a320d85598eda29f072e343e57ec27ab8", null ],
     [ "to_string_view", "common_8h.html#a1ed786fe4b8a5babc3aeaa3eba9a9921", null ],
     [ "level_string_views", "common_8h.html#ae7c510cd37fa5221221eb91f03a98655", null ],

@@ -26,6 +26,7 @@ var livox__sdk_8h =
     [ "LidarGetPointCloudReturnModeCallback", "livox__sdk_8h.html#ada22a13c2fd434c68169cce4c740eb2d", null ],
     [ "AddHubToConnect", "livox__sdk_8h.html#a218e391fa6d2444aaee4c250b3072963", null ],
     [ "AddLidarToConnect", "livox__sdk_8h.html#a1d581cad373189a6de6767adbf369d41", null ],
+    [ "DisableConsoleLogger", "livox__sdk_8h.html#aa4b61972736142636d5996dfacafe2da", null ],
     [ "DisconnectDevice", "livox__sdk_8h.html#a6e623461e316d11e918b5d865a116b16", null ],
     [ "GetConnectedDevices", "livox__sdk_8h.html#a1bf3c4b6542daeb5d2ab2d4531364973", null ],
     [ "GetDeviceIpInformation", "livox__sdk_8h.html#a7a615a1cb7e9777f2e39ac583fcd4ea1", null ],

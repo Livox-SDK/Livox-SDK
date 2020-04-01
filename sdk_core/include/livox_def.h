@@ -129,7 +129,7 @@ typedef enum {
 #pragma pack(1)
 
 #define LIVOX_SDK_MAJOR_VERSION       2
-#define LIVOX_SDK_MINOR_VERSION       0
+#define LIVOX_SDK_MINOR_VERSION       1
 #define LIVOX_SDK_PATCH_VERSION       0
 
 #define kBroadcastCodeSize 16
@@ -151,9 +151,9 @@ typedef struct {
 
 /** Spherical coordinate format. */
 typedef struct {
-  uint32_t depth;       /**< Radial distance, Unit:mm */
-  uint16_t theta;       /**< Polar angle, Unit:0.01rad */
-  uint16_t phi;         /**< Azimuthal angle, Unit:0.01rad */
+  uint32_t depth;       /**< Depth, Unit: mm */
+  uint16_t theta;       /**< Zenith angle[0, 18000], Unit: 0.01 degree */
+  uint16_t phi;         /**< Azimuth[0, 36000], Unit: 0.01 degree */
   uint8_t reflectivity; /**< Reflectivity */
 } LivoxSpherPoint;
 
@@ -176,9 +176,9 @@ typedef struct {
 
 /** Extend spherical coordinate format. */
 typedef struct {
-  uint32_t depth;       /**< Radial distance, Unit:mm */
-  uint16_t theta;       /**< Polar angle, Unit:0.01rad */
-  uint16_t phi;         /**< Azimuthal angle, Unit:0.01rad */
+  uint32_t depth;       /**< Depth, Unit: mm */
+  uint16_t theta;       /**< Zenith angle[0, 18000], Unit: 0.01 degree */
+  uint16_t phi;         /**< Azimuth[0, 36000], Unit: 0.01 degree */
   uint8_t reflectivity; /**< Reflectivity */
   uint8_t tag;          /**< Tag */
 } LivoxExtendSpherPoint;
@@ -199,12 +199,12 @@ typedef struct {
 
 /** Dual extend spherical coordinate format. */
 typedef struct {
-  uint16_t theta;        /**< Polar angle, Unit:0.01rad */
-  uint16_t phi;          /**< Azimuthal angle, Unit:0.01rad */
-  uint32_t depth1;       /**< Radial distance, Unit:mm */
+  uint16_t theta;        /**< Zenith angle[0, 18000], Unit: 0.01 degree */
+  uint16_t phi;          /**< Azimuth[0, 36000], Unit: 0.01 degree */
+  uint32_t depth1;       /**< Depth, Unit: mm */
   uint8_t reflectivity1; /**< Reflectivity */
   uint8_t tag1;          /**< Tag */
-  uint32_t depth2;       /**< Radial distance, Unit:mm */
+  uint32_t depth2;       /**< Depth, Unit: mm */
   uint8_t reflectivity2; /**< Reflectivity */
   uint8_t tag2;          /**< Tag */
 } LivoxDualExtendSpherPoint;
@@ -301,6 +301,7 @@ typedef struct {
   LidarState state;                        /**< LiDAR state. */
   LidarFeature feature;                    /**< LiDAR feature. */
   StatusUnion status;                      /**< LiDAR work state status. */
+  uint8_t firmware_version[4];             /**< Firmware version. */
 } DeviceInfo;
 
 /** The information of broadcast device. */
