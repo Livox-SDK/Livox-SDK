@@ -222,6 +222,11 @@ void OnDeviceInfoChange(const DeviceInfo *info, DeviceEvent type) {
   }
 }
 
+void OnDeviceInfoChangeExtra(int param, const DeviceInfo *info, DeviceEvent type) {
+  // ... Do stuff with the extra param
+}
+
+
 /** Callback function when broadcast message received.
  * You need to add listening device broadcast code and set the point cloud data callback in this function.
  */
@@ -236,6 +241,15 @@ void OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
     broadcast_code_rev.push_back(info->broadcast_code);
     lidar_arrive_condition.notify_one();
   }
+}
+
+struct OptBcast{
+  int a;
+  int b;
+};
+
+void OnDeviceBroadcastExtra(OptBcast o, const BroadcastDeviceInfo *info) {
+ // ... Do stuff with the extra param
 }
 
 /** Wait until no new device arriving in 2 second. */
@@ -391,14 +405,19 @@ int main(int argc, const char *argv[]) {
   printf("Livox SDK version %d.%d.%d .\n", _sdkversion.major, _sdkversion.minor, _sdkversion.patch);
 
   memset(devices, 0, sizeof(devices));
+  using namespace std::placeholders;
+
 
 /** Set the callback function receiving broadcast message from Livox LiDAR. */
-  SetBroadcastCallback(OnDeviceBroadcast);
+  OptBcast bcastopts;
+  std::function<void(const BroadcastDeviceInfo *info)> cb_bcast(std::bind(OnDeviceBroadcastExtra, bcastopts, _1));
+  SetBroadcastCallback(cb_bcast);
 
 /** Set the callback function called when device state change,
  * which means connection/disconnection and changing of LiDAR state.
  */
-  SetDeviceStateUpdateCallback(OnDeviceInfoChange);
+ std::function<void(const DeviceInfo *, DeviceEvent)> cb_device_state(std::bind(OnDeviceInfoChangeExtra, 1, _1, _2));
+ SetDeviceStateUpdateCallback(cb_device_state);
 
 /** Start the device discovering routine. */
   if (!Start()) {
