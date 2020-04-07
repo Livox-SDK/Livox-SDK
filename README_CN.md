@@ -1,3 +1,4 @@
+[README](<https://github.com/Livox-SDK/Livox-SDK/blob/master/README.md>) - English Version of the README
 # 1 简介
 
 Livox SDK 是为 Livox 公司旗下所有产品设计的软件开发套件。它基于 C/C++ 语言开发，遵循 Livox SDK 通信协议，并为用户提供了易用的 C 语言风格的接口。通过 Livox SDK，用户可以快速地连接 Livox 产品并接收点云数据。
