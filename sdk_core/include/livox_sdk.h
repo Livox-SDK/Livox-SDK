@@ -25,7 +25,10 @@
 #ifndef LIVOX_SDK_H_
 #define LIVOX_SDK_H_
 
+
+
 #ifdef __cplusplus
+#include<functional>
 extern "C" {
 #endif
 
@@ -99,6 +102,8 @@ typedef void (*DeviceStateUpdateCallback)(const DeviceInfo *device, DeviceEvent 
  * @param cb callback for device connection/disconnection.
  */
 void SetDeviceStateUpdateCallback(DeviceStateUpdateCallback cb);
+
+
 
 /**
  * Add a broadcast code to the connecting list and only devices with broadcast code in this list will be connected. The
@@ -261,7 +266,7 @@ livox_status SetStaticDynamicIP(uint8_t handle,
                                 void *client_data);
 /**
  * Set device's static IP mode.
- * @note Mid40/100 is not supported to set subnet mask and gateway address. 
+ * @note Mid40/100 is not supported to set subnet mask and gateway address.
  * \ref SetStaticDeviceIpModeRequest's setting: net_mask and gw_addr will not take effect on Mid40/100.
  * @param  handle        device handle.
  * @param  req           request sent to device.
@@ -857,6 +862,11 @@ livox_status LidarSetUtcSyncTime(uint8_t handle,
 
 #ifdef __cplusplus
 }
+
+
+void SetDeviceStateUpdateCallback(const std::function<void(const DeviceInfo *, DeviceEvent)> &cb);
+void SetBroadcastCallback(const std::function<void(const BroadcastDeviceInfo *info)> &cb );
+
 #endif
 
 #endif  // LIVOX_SDK_H_
