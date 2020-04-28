@@ -162,12 +162,22 @@ bool ParseRmcTime(const char* rmc, uint16_t rmc_len, LidarSetUtcSyncTimeRequest*
 
   memset(utc_time_req, 0, sizeof(LidarSetUtcSyncTimeRequest));
 
-  if (4 != sscanf(rmc_begin,
+  int num = sscanf(rmc_begin,
                   "$G%*[NP]RMC,%[^,],%*C,%*f,%*C,%*f,%*C,%*f,%*f,%2hhu%2hhu%[^,],%*f,",
                   &utc_hms_buff[0],
                   &(utc_time_req->day),
                   &(utc_time_req->month),
-                  &utc_yy_buff[0])) {
+                  &utc_yy_buff[0]);
+  if (num != 4) {
+    num = sscanf(rmc_begin,
+                  "$G%*[NP]RMC,%[^,],%*C,%*f,%*C,%*f,%*C,%*f,,%2hhu%2hhu%[^,],%*f,",
+                  &utc_hms_buff[0],
+                  &(utc_time_req->day),
+                  &(utc_time_req->month),
+                  &utc_yy_buff[0]);
+  }
+
+  if (num != 4) {
     return false;
   }
 
