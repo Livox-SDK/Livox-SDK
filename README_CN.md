@@ -42,12 +42,31 @@ sudo apt install cmake pkg-config
 ```
 git clone https://github.com/Livox-SDK/Livox-SDK.git
 cd Livox-SDK
+
+
+```
+安装 apr 库通过：
+
+```
 sudo ./third_party/apr/apr_build.sh
+```
+
+或者通过：
+
+```
+sudo apt install libapr1-dev
+```
+
+然后：
+
+```
 cd build && cmake ..
 make
 sudo make install
 ```
+
 ### 4.1.2 Windows 7/10
+
 #### 依赖
 Livox SDK 支持 Visual Studio 2015/2017，需要安装 [CMake 3.0.0+](https://cmake.org/) 依赖。
 

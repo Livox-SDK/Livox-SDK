@@ -59,4 +59,8 @@ make install
 
 popd
 
+if [ ! -d "/usr/local/lib/pkgconfig" ]; then
+	mkdir /usr/local/lib/pkgconfig
+fi
+
 cp /usr/local/apr/lib/pkgconfig/apr-1.pc /usr/local/lib/pkgconfig/

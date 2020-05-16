@@ -1,3 +1,5 @@
+[中文版本使用说明](<https://github.com/Livox-SDK/Livox-SDK/blob/master/README_CN.md>)
+
 # 1 Introduction
 
 Livox SDK is the software development kit designed for all Livox products. It is developed based on C/C++ following Livox SDK Communication Protocol, and provides easy-to-use C style API. With Livox SDK, users can quickly connect to Livox products and receive point cloud data. 
@@ -41,12 +43,29 @@ In the Livox SDK directory, run the following commands to compile the project:
 ```
 git clone https://github.com/Livox-SDK/Livox-SDK.git
 cd Livox-SDK
+```
+Install apr library by:
+
+```
 sudo ./third_party/apr/apr_build.sh
+```
+
+or by:
+
+```
+sudo apt install libapr1-dev
+```
+
+then
+
+```
 cd build && cmake ..
 make
 sudo make install
 ```
+
 ### 4.1.2 Windows 7/10
+
 #### Dependencies
 Livox SDK supports Visual Studio 2015/2017 and requires install [CMake 3.0.0+](https://cmake.org/) as dependencies.  
 
