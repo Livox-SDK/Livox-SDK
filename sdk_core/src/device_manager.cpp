@@ -207,7 +207,7 @@ bool DeviceManager::AddListeningDevice(const string &broadcast_code, DeviceMode 
     devices_[kHubDefaultHandle].connected = false;
     strncpy(devices_[kHubDefaultHandle].info.broadcast_code,
             broadcast_code.c_str(),
-            sizeof(devices_[kHubDefaultHandle].info.broadcast_code));
+            sizeof(devices_[kHubDefaultHandle].info.broadcast_code)-1);
     devices_[kHubDefaultHandle].info.handle = kHubDefaultHandle;
     return true;
   }
@@ -216,7 +216,7 @@ bool DeviceManager::AddListeningDevice(const string &broadcast_code, DeviceMode 
     if (strlen(ite->info.broadcast_code) == 0) {
       handle = ite - devices_.begin();
       ite->connected = false;
-      strncpy(ite->info.broadcast_code, broadcast_code.c_str(), sizeof(ite->info.broadcast_code));
+      strncpy(ite->info.broadcast_code, broadcast_code.c_str(), sizeof(ite->info.broadcast_code)-1);
       ite->info.handle = handle;
       return true;
     } else if (strncmp(ite->info.broadcast_code, broadcast_code.c_str(), sizeof(ite->info.broadcast_code)) == 0) {
