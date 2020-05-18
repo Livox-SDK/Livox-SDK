@@ -1,10 +1,12 @@
 
-include( $$PWD/include/sdk_core_include.pri )
-include( $$PWD/src/sdk_core_src.pri )
+INCLUDEPATH += $$PWD/include
 
-INCLUDEPATH += $$PWD/include/third_party/spdlog
+INCLUDEPATH += $$PWD/include/third_party/FastCRC/
+include( $$PWD/src/third_party/FastCRC/FastCRC.pri )
 
-CONFIG      *= link_pkgconfig
-PKGCONFIG   *= apr-1
+INCLUDEPATH += $$PWD/src/command_handler/
+HEADERS += $$PWD/src/command_handler/command_impl.h
 
-LIBS        *= -lboost_system
+INCLUDEPATH += $$PWD/src/comm/
+HEADERS += $$PWD/src/comm/sdk_protocol.h
+SOURCES += $$PWD/src/comm/sdk_protocol.cpp
