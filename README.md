@@ -67,7 +67,7 @@ sudo make install
 ### 4.1.2 Windows 7/10
 
 #### Dependencies
-Livox SDK supports Visual Studio 2015/2017 and requires install [CMake 3.0.0+](https://cmake.org/) as dependencies.  
+Livox SDK supports Visual Studio 2015 Update3/2017 and requires install [CMake 3.0.0+](https://cmake.org/) as dependencies.  
 
 In the Livox SDK directory, run the following commands to create the Visual Studio solution file. 
 Generate the 32-bit project:
