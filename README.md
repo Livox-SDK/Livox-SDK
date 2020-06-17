@@ -8,7 +8,7 @@ Livox SDK consists of Livox SDK communication protocol, Livox SDK core, Livox SD
 
 ## Prerequisites
 * Ubuntu 14.04/Ubuntu 16.04/Ubuntu 18.04, both x86 and ARM (Nvidia TX2)
-* Windows 7/10, Visual Studio 2015/2017
+* Windows 7/10, Visual Studio 2015 Update3/2017
 * C++11 compiler
 
 # 2 Livox SDK Communication Protocol
