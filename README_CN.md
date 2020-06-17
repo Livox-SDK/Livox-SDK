@@ -7,7 +7,7 @@ Livox SDK 包括了 Livox SDK 通信协议，Livox SDK 内核，Livox SDK 应用
 
 ## 前置依赖
 * Ubuntu 14.04/Ubuntu 16.04/Ubuntu 18.04, x86 和 ARM (Nvidia TX2)
-* Windows 7/10, Visual Studio 2015/2017
+* Windows 7/10, Visual Studio 2015 Update3/2017
 * C++11 编译器
 
 # 2 Livox SDK 通信协议
