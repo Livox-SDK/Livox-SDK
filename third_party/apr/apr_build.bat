@@ -48,7 +48,7 @@ if defined VS150COMNTOOLS (
 	call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" %PLATFORM%
 ) else if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" (
 	call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" %PLATFORM%
-)
+) 
 
 if defined VS160COMNTOOLS (
 	call "%VS160COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" %PLATFORM%
@@ -81,7 +81,7 @@ cmake .. -G "NMake Makefiles" ^
 		-DAPR_BUILD_TESTAPR=OFF ^
 		-DTEST_STATIC_LIBS=OFF ^
 		-DCMAKE_BUILD_TYPE=Release
-if %ERRORLEVEL% neq 0 (echo "error：cmake generate error") && exit /b 1
+::if %ERRORLEVEL% neq 0 (echo "error: cmake generate error") && exit /b 1
 nmake
 nmake install
 

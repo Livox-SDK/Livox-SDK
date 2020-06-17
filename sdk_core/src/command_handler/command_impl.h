@@ -84,7 +84,18 @@ typedef enum {
    * General command set, reboot a device.
    */
   kCommandIDGeneralRebootDevice = 0x0a,
-
+  /**
+   * Set device's parameters.
+   */
+  kCommandIDGeneralSetDeviceParam = 0x0b,
+  /**
+   * Get device's parameters.
+   */
+  kCommandIDGeneralGetDeviceParam = 0x0c,
+  /**
+   * Reset device's all parameters.
+   */
+  kCommandIDGeneralResetDeviceParam = 0x0d,
   /**
    * ******************************************************
    * Don't add command id after kCommandIDGeneralCommandCount.
@@ -102,7 +113,9 @@ static const uint16_t GeneralCommandTimeout[kCommandIDGeneralCommandCount] = {KD
                                                                               KDefaultTimeOut,
                                                                               KDefaultTimeOut,
                                                                               KDefaultTimeOut,
-                                                                              KDefaultTimeOut};
+                                                                              KDefaultTimeOut,
+                                                                              KDefaultTimeOut,
+                                                                              KDefaultTimeOut,};
 
 /**  Enum that represents the command id. */
 typedef enum {
@@ -167,7 +180,7 @@ static const uint16_t LidarCommandTimeout[kCommandIDLidarCommandCount] = {KDefau
                                                                           KDefaultTimeOut,
                                                                           KDefaultTimeOut,
                                                                           KDefaultTimeOut,
-                                                                          KDefaultTimeOut};
+                                                                          KDefaultTimeOut,};
 
 /**  Enum that represents the command id. */
 typedef enum {

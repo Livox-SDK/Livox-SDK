@@ -130,7 +130,7 @@ typedef enum {
 
 #define LIVOX_SDK_MAJOR_VERSION       2
 #define LIVOX_SDK_MINOR_VERSION       1
-#define LIVOX_SDK_PATCH_VERSION       0
+#define LIVOX_SDK_PATCH_VERSION       1
 
 #define kBroadcastCodeSize 16
 
@@ -472,6 +472,62 @@ typedef struct {
   uint8_t feature;         /**< LiDAR feature. */
   StatusUnion error_union; /**< LiDAR work state. */
 } HeartbeatResponse;
+
+/**
+ * The error code of Getting/Setting Device's Parameters.
+ */
+typedef enum {
+  kKeyNoError = 0,                  /**< No Error. */
+  kKeyNotSupported = 1,             /**< The key is not supported. */
+  kKeyExecFailed = 2,               /**< Execution failed. */
+  kKeyNotSupportedWritingState = 3, /**< The key cannot be written. */
+  kKeyValueError = 4,               /**< Wrong value. */
+  kKeyValueLengthError = 5,         /**< Wrong value length. */
+  kKeyNoEnoughMemory = 6,           /**< Reading parameter length limit. */
+  kKeyLengthError = 7,              /**< The number of parameters does not match. */
+} KeyErrorCode;
+
+/**
+ * The response body of setting device's parameter.
+ */
+typedef struct {
+  uint8_t ret_code;              /**< Return code. */
+  uint16_t error_param_key;      /**< Error Key. */
+  uint8_t error_code;            /**< Error code, refer to \ref KeyErrorCode. */
+} DeviceParameterResponse;
+
+/**
+ * Keys of device's parameters.
+ */
+typedef enum {
+  kKeyDefault = 0,              /**< Default key name. */
+  kKeyHighSensetivity = 1,      /**< Key to get/set LiDAR' Sensetivity. */
+} DeviceParamKeyName;
+
+/**
+ * Key and value of device's parameters.
+ */
+typedef struct {
+  uint16_t key;                /*< Key, refer to \ref DeviceParamKeyName. */
+  uint16_t length;             /*< Length of value */
+  uint8_t value[1];            /*< Value */
+} KeyValueParam;
+
+/**
+ * The response body of getting device's parameter.
+ */
+typedef struct {
+  DeviceParameterResponse rsp;     /*< Return code. */
+  KeyValueParam kv;                /*< Key and value of device's parameters. */
+} GetDeviceParameterResponse;
+
+/**
+ * The request body for the command of getting device's parameters.
+ */
+typedef struct {
+  uint8_t param_num;           /*< Number of key. */
+  uint16_t key[1];             /*< Key, refer to \ref DeviceParamKeyName. */
+} GetDeviceParameterRequest;
 
 /**
  * The request body for the command of setting Livox LiDAR's parameters.

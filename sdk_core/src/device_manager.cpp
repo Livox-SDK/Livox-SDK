@@ -301,6 +301,15 @@ bool DeviceManager::IsLidarMid40(uint8_t handle) {
   return false;
 }
 
+bool DeviceManager::IsLidarTele(uint8_t handle) {
+  DeviceInfo lidar_info;
+  bool found = device_manager().FindDevice(handle, lidar_info);
+  if ( found && lidar_info.type == kDeviceTypeLidarTele) {
+    return true;
+  }
+  return false;
+}
+
 bool DeviceManager::GetLidarFirmwareVersion(uint8_t handle, uint32_t &firmware_version) {
   if (handle > devices_.size()) {
     return false;

@@ -103,6 +103,7 @@ class DeviceManager : public noncopyable {
   void GetConnectedDevices(std::vector<DeviceInfo> &devices);
   bool AddListeningDevice(const std::string &broadcast_code, DeviceMode mode, uint8_t &handle);
   bool IsLidarMid40(uint8_t handle);
+  bool IsLidarTele(uint8_t handle);
   bool GetLidarFirmwareVersion(uint8_t handle, uint32_t &firmware_version);
 
  private:

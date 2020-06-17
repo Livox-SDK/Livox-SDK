@@ -1,5 +1,0 @@
-var structfmt_1_1v5_1_1formatter_3_01_t_00_01_char_00_01typename_01std_1_1enable__if_3_01internal_1_8f67657c5a3f8dbcc6236217f928ccb5 =
-[
-    [ "format", "structfmt_1_1v5_1_1formatter_3_01_t_00_01_char_00_01typename_01std_1_1enable__if_3_01internal_1_8f67657c5a3f8dbcc6236217f928ccb5.html#a0decc0ceee49ae7780113a741baf8742", null ],
-    [ "parse", "structfmt_1_1v5_1_1formatter_3_01_t_00_01_char_00_01typename_01std_1_1enable__if_3_01internal_1_8f67657c5a3f8dbcc6236217f928ccb5.html#a6a4b8134330ce67c7c9e8e7db077b334", null ]
-];

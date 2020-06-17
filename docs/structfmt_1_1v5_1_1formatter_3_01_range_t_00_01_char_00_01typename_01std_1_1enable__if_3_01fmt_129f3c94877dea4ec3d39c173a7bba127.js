@@ -1,6 +1,0 @@
-var structfmt_1_1v5_1_1formatter_3_01_range_t_00_01_char_00_01typename_01std_1_1enable__if_3_01fmt_129f3c94877dea4ec3d39c173a7bba127 =
-[
-    [ "format", "structfmt_1_1v5_1_1formatter_3_01_range_t_00_01_char_00_01typename_01std_1_1enable__if_3_01fmt_129f3c94877dea4ec3d39c173a7bba127.html#af4b0d3f2b38c14b1d0cf4779e63af7cb", null ],
-    [ "parse", "structfmt_1_1v5_1_1formatter_3_01_range_t_00_01_char_00_01typename_01std_1_1enable__if_3_01fmt_129f3c94877dea4ec3d39c173a7bba127.html#a56962f9c47a1654f91ebdc5244b81f32", null ],
-    [ "formatting", "structfmt_1_1v5_1_1formatter_3_01_range_t_00_01_char_00_01typename_01std_1_1enable__if_3_01fmt_129f3c94877dea4ec3d39c173a7bba127.html#aeef2ffb1f84db7d17d426ff00b95c04d", null ]
-];

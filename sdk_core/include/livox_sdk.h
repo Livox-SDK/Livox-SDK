@@ -318,6 +318,59 @@ livox_status GetDeviceIpInformation(uint8_t handle, GetDeviceIpInformationCallba
 livox_status RebootDevice(uint8_t handle, uint16_t timeout, CommonCommandCallback cb, void * client_data);
 
 /**
+ * @c SetDeviceParameters' response callback function.
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
+ * error code.
+ * @param handle      device handle.
+ * @param response    response from the device.
+ * @param client_data user data associated with the command.
+ */
+typedef void (*SetDeviceParametersCallback)(livox_status status,
+                                            uint8_t handle,
+                                            DeviceParameterResponse *response,
+                                            void *client_data);
+
+/**
+ * LiDAR Enable HighSensitivity.
+ * @param  handle        device handle.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarEnableHighSensitivity(uint8_t handle, SetDeviceParametersCallback cb, void *client_data);
+
+/**
+ * LiDAR Disable HighSensitivity.
+ * @param  handle        device handle.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarDisableHighSensitivity(uint8_t handle, SetDeviceParametersCallback cb, void *client_data);
+
+/**
+ * @c GetDeviceParameters' response callback function.
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
+ * error code.
+ * @param handle      device handle.
+ * @param response    response from the device.
+ * @param client_data user data associated with the command.
+ */
+typedef void (*GetDeviceParametersCallback)(livox_status status,
+                                            uint8_t handle,
+                                            GetDeviceParameterResponse *response,
+                                            void *client_data);
+
+/**
+ * LiDAR Get HighSensitivity State.
+ * @param  handle        device handle.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarGetHighSensitivityState(uint8_t handle, GetDeviceParametersCallback cb, void *client_data);
+
+/**
  * @c HubQueryLidarInformation response callback function.
  * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
  * error code.

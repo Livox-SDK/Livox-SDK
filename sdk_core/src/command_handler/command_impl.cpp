@@ -226,6 +226,27 @@ bool ParseRmcTime(const char* rmc, uint16_t rmc_len, LidarSetUtcSyncTimeRequest*
   return true;
 }
 
+livox_status SetDeviceParameters(uint8_t handle, uint8_t *req, uint16_t length, SetDeviceParametersCallback cb, void *client_data) {
+
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetGeneral,
+                                                      kCommandIDGeneralSetDeviceParam,
+                                                      req,
+                                                      length,
+                                                      MakeCommandCallback<DeviceParameterResponse>(cb, client_data));
+  return result;
+}
+
+livox_status GetDeiveParameter(uint8_t handle, GetDeviceParameterRequest *req, GetDeviceParametersCallback cb, void *client_data) {
+  livox_status result = command_handler().SendCommand(handle,
+                                                      kCommandSetGeneral,
+                                                      kCommandIDGeneralGetDeviceParam,
+                                                      (uint8_t *)req,
+                                                      sizeof(GetDeviceParameterRequest),
+                                                      MakeCommandCallback<GetDeviceParameterResponse>(cb, client_data));
+  return result;
+}
+
 livox_status LidarStartSampling(uint8_t handle, CommonCommandCallback cb, void *client_data) {
   if (device_manager().device_mode() != kDeviceModeLidar) {
     return kStatusNotSupported;
@@ -367,6 +388,48 @@ livox_status RebootDevice(uint8_t handle, uint16_t timeout, CommonCommandCallbac
                                                       sizeof(timeout),
                                                       MakeCommandCallback<uint8_t>(cb, client_data));
   return result;
+}
+
+livox_status LidarEnableHighSensitivity(uint8_t handle, SetDeviceParametersCallback cb, void *client_data) {
+  if (!device_manager().IsLidarTele(handle)) {
+    return kStatusNotSupported;
+  }
+
+  uint8_t req_buff[kMaxCommandBufferSize] = {0};
+  uint16_t req_len = 0;
+  KeyValueParam * kv = (KeyValueParam *)&req_buff[0];
+  kv->key = static_cast<uint16_t>(kKeyHighSensetivity);
+  kv->length = 1;
+  kv->value[0] = static_cast<uint8_t>(true);
+  req_len = sizeof(KeyValueParam);
+
+  return SetDeviceParameters(handle, req_buff, req_len, cb, client_data);
+}
+
+livox_status LidarDisableHighSensitivity(uint8_t handle, SetDeviceParametersCallback cb, void *client_data) {
+  if (!device_manager().IsLidarTele(handle)) {
+    return kStatusNotSupported;
+  }
+  uint8_t req_buff[kMaxCommandBufferSize] = {0};
+  uint16_t req_len = 0;
+  KeyValueParam * kv = (KeyValueParam *)&req_buff[0];
+  kv->key = static_cast<uint16_t>(kKeyHighSensetivity);
+  kv->length = 1;
+  kv->value[0] = static_cast<uint8_t>(false);
+  req_len = sizeof(KeyValueParam);
+
+  return SetDeviceParameters(handle, req_buff, req_len, cb, client_data);
+}
+
+livox_status LidarGetHighSensitivityState(uint8_t handle, GetDeviceParametersCallback cb, void *client_data) {
+  if (!device_manager().IsLidarTele(handle)) {
+    return kStatusNotSupported;
+  }
+
+  GetDeviceParameterRequest req;
+  req.param_num = 1;
+  req.key[0] = static_cast<uint16_t>(kKeyHighSensetivity);
+  return GetDeiveParameter(handle, &req, cb, client_data);
 }
 
 livox_status LidarSetMode(uint8_t handle, LidarMode mode, CommonCommandCallback cb, void *client_data) {
