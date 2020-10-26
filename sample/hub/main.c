@@ -100,6 +100,10 @@ void GetHubData(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *c
         LivoxDualExtendSpherPoint *p_point_data = (LivoxDualExtendSpherPoint *)data->data;
       }else if ( data ->data_type == kImu) {
         LivoxImuPoint *p_point_data = (LivoxImuPoint *)data->data;
+      }else if ( data ->data_type == kTripleExtendCartesian) {
+        LivoxTripleExtendRawPoint *p_point_data = (LivoxTripleExtendRawPoint *)data->data;
+      }else if ( data ->data_type == kTripleExtendSpherical) {
+        LivoxTripleExtendSpherPoint *p_point_data = (LivoxTripleExtendSpherPoint *)data->data;
       }
       printf("data_type %d data num %d\n", data->data_type, data_num);
     }

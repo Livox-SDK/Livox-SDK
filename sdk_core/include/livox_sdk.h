@@ -163,6 +163,11 @@ typedef void (*DataCallback)(uint8_t handle, LivoxEthPacket *data, uint32_t data
  * cloud data callback before beginning sampling.
  * @param handle      device handle.
  * @param cb callback to receive point cloud data.
+ * @note 1: Don't do any blocking operations in callback function, it will affects further data's receiving;
+ * 2: For different device handle, callback to receive point cloud data will run on its own thread. If you bind
+ * different handle to same callback function, please make sure that operations in callback function are thread-safe;
+ * 3: callback function's data pointer will be invalid after callback fuction returns. It's recommended to
+ * copy all data_num of point cloud every time callback is triggered.
  * @param client_data user data associated with the command.
  */
 void SetDataCallback(uint8_t handle, DataCallback cb, void *client_data);
@@ -332,6 +337,7 @@ typedef void (*SetDeviceParametersCallback)(livox_status status,
 
 /**
  * LiDAR Enable HighSensitivity.
+ * @note \ref LidarEnableHighSensitivity only support for Tele/Avia.
  * @param  handle        device handle.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
@@ -341,6 +347,7 @@ livox_status LidarEnableHighSensitivity(uint8_t handle, SetDeviceParametersCallb
 
 /**
  * LiDAR Disable HighSensitivity.
+ * @note \ref LidarDisableHighSensitivity only support for Tele/Avia.
  * @param  handle        device handle.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
@@ -363,12 +370,89 @@ typedef void (*GetDeviceParametersCallback)(livox_status status,
 
 /**
  * LiDAR Get HighSensitivity State.
+ * @note \ref LidarGetHighSensitivityState only support for Tele/Avia.
  * @param  handle        device handle.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.
  * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
  */
 livox_status LidarGetHighSensitivityState(uint8_t handle, GetDeviceParametersCallback cb, void *client_data);
+
+/**
+ * LiDAR Set Scan Pattern.
+ * @note \ref LidarSetScanPattern only support for Avia.
+ * @param  handle        device handle.
+ * @param  pattern       scan pattern of LiDAR, see \ref LidarScanPattern for detail.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarSetScanPattern(uint8_t handle, LidarScanPattern pattern, SetDeviceParametersCallback cb, void *client_data);
+
+/**
+ * LiDAR Get Scan Pattern.
+ * @note \ref LidarGetScanPattern only support for Avia.
+ * @param  handle        device handle.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarGetScanPattern(uint8_t handle, GetDeviceParametersCallback cb, void *client_data);
+
+/**
+ * LiDAR Set Slot Number.
+ * @note \ref LidarSetSlotNum only support for Mid70/Avia.
+ * @param  handle        device handle.
+ * @param  slot          slot number of LiDAR, range from 1 to 9.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarSetSlotNum(uint8_t handle, uint8_t slot, SetDeviceParametersCallback cb, void *client_data);
+
+/**
+ * LiDAR Get Slot Number.
+ * @note \ref LidarGetSlotNum only support for Mid70/Avia.
+ * @param  handle        device handle.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status LidarGetSlotNum(uint8_t handle, GetDeviceParametersCallback cb, void *client_data);
+
+/**
+ * @c DeviceResetParameters' response callback function.
+ * @param status      kStatusSuccess on successful return, kStatusTimeout on timeout, see \ref LivoxStatus for other
+ * error code.
+ * @param handle      device handle.
+ * @param response    response from the device.
+ * @param client_data user data associated with the command.
+ */
+typedef void (*DeviceResetParametersCallback)(livox_status status,
+                                              uint8_t handle,
+                                              DeviceParameterResponse *response,
+                                              void *client_data);
+
+/**
+ * Reset LiDAR/Hub's All Parameters, see \ref DeviceParamKeyName for all parameters.
+ * @param  handle        device handle.
+ * @param  cb            callback for the command. 
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status DeviceResetAllParameters(uint8_t handle, DeviceResetParametersCallback cb, void *client_data);
+
+/**
+ * Reset LiDAR/Hub's Parameters, see \ref DeviceParamKeyName for all parameters.
+ * @param  handle        device handle.
+ * @param  keys          keys to reset, see \ref DeviceParamKeyName for all parameters.
+ * @param  num           num of keys to reset.
+ * @param  cb            callback for the command.
+ * @param  client_data   user data associated with the command.
+ * @return kStatusSuccess on successful return, see \ref LivoxStatus for other error code.
+ */
+livox_status DeviceResetParameters(uint8_t handle, DeviceParamKeyName * keys, uint8_t num, DeviceResetParametersCallback cb, void *client_data);
+
 
 /**
  * @c HubQueryLidarInformation response callback function.
@@ -882,7 +966,7 @@ livox_status LidarGetImuPushFrequency(uint8_t handle, LidarGetImuPushFrequencyCa
  * Set GPRMC formate synchronization time.
  * @note \ref LidarSetRmcSyncTime is not supported for Mid40/100 firmware version < 03.07.0000.
  * @param  handle        device handle.
- * @param  rmc           GPRMC\GNRMC format data.
+ * @param  rmc           GPRMC/GNRMC format data.
  * @param  rmc_length    lenth of gprmc.
  * @param  cb            callback for the command.
  * @param  client_data   user data associated with the command.

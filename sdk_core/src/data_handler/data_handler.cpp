@@ -111,7 +111,13 @@ void DataHandler::OnDataCallback(uint8_t handle, void *data, uint16_t size) {
     case kImu:
       size = (size - kPrefixDataSize) / sizeof(LivoxImuPoint);
       break;
-    default: 
+    case kTripleExtendCartesian:
+      size = (size - kPrefixDataSize) / sizeof(LivoxTripleExtendRawPoint);
+      break;
+    case kTripleExtendSpherical:
+      size = (size - kPrefixDataSize) / sizeof(LivoxTripleExtendSpherPoint);
+      break;
+    default:
       return;
   }
   if (cb) {

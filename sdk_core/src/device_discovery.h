@@ -43,6 +43,8 @@ namespace livox {
  */
 class DeviceDiscovery : public noncopyable, IOLoop::IOLoopDelegate {
  public:
+  typedef std::chrono::steady_clock::time_point TimePoint;
+
   DeviceDiscovery() : sock_(NULL), mem_pool_(NULL), loop_(NULL), comm_port_(nullptr) {}
   bool Init();
   void Uninit();
@@ -59,7 +61,7 @@ class DeviceDiscovery : public noncopyable, IOLoop::IOLoopDelegate {
    * @param client_data client data passed in IOLoop::AddDelegate
    */
   void OnData(apr_socket_t *, void *client_data);
-  void OnTimer(apr_time_t now);
+  void OnTimer(TimePoint now);
 
  private:
   void OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr);
@@ -81,7 +83,7 @@ class DeviceDiscovery : public noncopyable, IOLoop::IOLoopDelegate {
   IOLoop *loop_;
   std::unique_ptr<CommPort> comm_port_;
   std::mutex mutex_;
-  typedef std::map<apr_socket_t *, std::tuple<apr_pool_t *, apr_time_t, DeviceInfo> > ConnectingDeviceMap;
+  typedef std::map<apr_socket_t *, std::tuple<apr_pool_t *, TimePoint, DeviceInfo> > ConnectingDeviceMap;
   ConnectingDeviceMap connecting_devices_;
 };
 

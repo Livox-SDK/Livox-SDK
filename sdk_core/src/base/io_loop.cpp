@@ -31,6 +31,7 @@
 using std::lock_guard;
 using std::mutex;
 using std::vector;
+using std::chrono::steady_clock;
 
 namespace livox {
 
@@ -111,8 +112,8 @@ void IOLoop::Loop() {
   }
 
   if (enable_timer_) {
-    apr_time_t t = apr_time_now();
-    if (last_timeout_ == 0 || t - last_timeout_ > apr_time_from_msec(50)) {
+    TimePoint t = steady_clock::now();;
+    if (last_timeout_ == TimePoint() || t - last_timeout_ > std::chrono::milliseconds(50)) {
       last_timeout_ = t;
       // copy delegates_ in case delegate is removed in callback.
       DelegatesType delegates = delegates_;

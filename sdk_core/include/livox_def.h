@@ -34,7 +34,9 @@ typedef enum {
   kDeviceTypeHub = 0,          /**< Livox Hub. */
   kDeviceTypeLidarMid40 = 1,   /**< Mid-40. */
   kDeviceTypeLidarTele = 2,    /**< Tele. */
-  kDeviceTypeLidarHorizon = 3  /**< Horizon. */
+  kDeviceTypeLidarHorizon = 3,  /**< Horizon. */
+  kDeviceTypeLidarMid70 = 6,    /**< Livox Mid-70. */
+  kDeviceTypeLidarAvia = 7     /**< Avia. */
 } DeviceType;
 
 /** Lidar state. */
@@ -65,6 +67,12 @@ typedef enum {
   kLidarDynamicIpMode = 0,   /**< Dynamic IP. */
   kLidarStaticIpMode = 1     /**< Static IP. */
 } LidarIpMode;
+
+/** Lidar Scan Pattern. */
+typedef enum {
+  kNoneRepetitiveScanPattern = 0,  /**< None Repetitive Scan Pattern. */
+  kRepetitiveScanPattern = 1,      /**< Repetitive Scan Pattern. */
+} LidarScanPattern;
 
 /** Function return value definition. */
 typedef enum {
@@ -110,6 +118,8 @@ typedef enum {
   kDualExtendCartesian,     /**< Dual extend cartesian coordinate  point cloud. */
   kDualExtendSpherical,     /**< Dual extend spherical coordinate point cloud. */
   kImu,                     /**< IMU data. */
+  kTripleExtendCartesian,   /**< Triple extend cartesian coordinate  point cloud. */
+  kTripleExtendSpherical,   /**< Triple extend spherical coordinate  point cloud. */
   kMaxPointDataType         /**< Max Point Data Type. */
 } PointDataType;
 
@@ -117,7 +127,8 @@ typedef enum {
 typedef enum {
   kFirstReturn,             /**< First single return mode . */
   kStrongestReturn,         /**< Strongest single return mode. */
-  kDualReturn               /**< Dual return mode. */
+  kDualReturn,              /**< Dual return mode. */
+  kTripleReturn,            /**< Triple return mode. */
 } PointCloudReturnMode;
 
 /** IMU push frequency. */
@@ -129,8 +140,8 @@ typedef enum {
 #pragma pack(1)
 
 #define LIVOX_SDK_MAJOR_VERSION       2
-#define LIVOX_SDK_MINOR_VERSION       1
-#define LIVOX_SDK_PATCH_VERSION       1
+#define LIVOX_SDK_MINOR_VERSION       2
+#define LIVOX_SDK_PATCH_VERSION       0
 
 #define kBroadcastCodeSize 16
 
@@ -208,6 +219,40 @@ typedef struct {
   uint8_t reflectivity2; /**< Reflectivity */
   uint8_t tag2;          /**< Tag */
 } LivoxDualExtendSpherPoint;
+
+/** Triple extend cartesian coordinate format. */
+typedef struct {
+  int32_t x1;            /**< X axis, Unit:mm */
+  int32_t y1;            /**< Y axis, Unit:mm */
+  int32_t z1;            /**< Z axis, Unit:mm */
+  uint8_t reflectivity1; /**< Reflectivity */
+  uint8_t tag1;          /**< Tag */
+  int32_t x2;            /**< X axis, Unit:mm */
+  int32_t y2;            /**< Y axis, Unit:mm */
+  int32_t z2;            /**< Z axis, Unit:mm */
+  uint8_t reflectivity2; /**< Reflectivity */
+  uint8_t tag2;          /**< Tag */
+  int32_t x3;            /**< X axis, Unit:mm */
+  int32_t y3;            /**< Y axis, Unit:mm */
+  int32_t z3;            /**< Z axis, Unit:mm */
+  uint8_t reflectivity3; /**< Reflectivity */
+  uint8_t tag3;          /**< Tag */
+} LivoxTripleExtendRawPoint;
+
+/** Triple extend spherical coordinate format. */
+typedef struct {
+  uint16_t theta;        /**< Zenith angle[0, 18000], Unit: 0.01 degree */
+  uint16_t phi;          /**< Azimuth[0, 36000], Unit: 0.01 degree */
+  uint32_t depth1;       /**< Depth, Unit: mm */
+  uint8_t reflectivity1; /**< Reflectivity */
+  uint8_t tag1;          /**< Tag */
+  uint32_t depth2;       /**< Depth, Unit: mm */
+  uint8_t reflectivity2; /**< Reflectivity */
+  uint8_t tag2;          /**< Tag */
+  uint32_t depth3;       /**< Depth, Unit: mm */
+  uint8_t reflectivity3; /**< Reflectivity */
+  uint8_t tag3;          /**< Tag */
+} LivoxTripleExtendSpherPoint;
 
 /** IMU data format. */
 typedef struct {
@@ -502,6 +547,8 @@ typedef struct {
 typedef enum {
   kKeyDefault = 0,              /**< Default key name. */
   kKeyHighSensetivity = 1,      /**< Key to get/set LiDAR' Sensetivity. */
+  kKeyScanPattern =  2,         /**< Key to get/set LiDAR' ScanPattern. */
+  kKeySlotNum = 3,              /**< Key to get/set LiDAR' Slot number. */
 } DeviceParamKeyName;
 
 /**
@@ -528,6 +575,15 @@ typedef struct {
   uint8_t param_num;           /*< Number of key. */
   uint16_t key[1];             /*< Key, refer to \ref DeviceParamKeyName. */
 } GetDeviceParameterRequest;
+
+/**
+ * The request body for the command of resetting device's parameters.
+ */
+typedef struct {
+  uint8_t flag;                /*< 0: for resetting all keys, 1: for resetting part of keys. */
+  uint8_t key_num;             /*< number of keys to reset. */
+  uint16_t key[1];             /*< Keys to reset, refer to \ref DeviceParamKeyName. */
+} ResetDeviceParameterRequest;
 
 /**
  * The request body for the command of setting Livox LiDAR's parameters.

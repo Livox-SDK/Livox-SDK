@@ -37,6 +37,7 @@ using std::make_pair;
 using std::map;
 using std::pair;
 using std::string;
+using std::chrono::steady_clock;
 
 namespace livox {
 
@@ -52,9 +53,9 @@ CommandChannel::CommandChannel(apr_port_t port,
       loop_(NULL),
       callback_(cb),
       comm_port_(new CommPort),
-      heartbeat_time_(0),
+      heartbeat_time_(),
       remote_ip_(remote_ip),
-      last_heartbeat_(0) {}
+      last_heartbeat_() {}
 
 bool CommandChannel::Bind(IOLoop *loop) {
   if (loop == NULL) {
@@ -67,6 +68,7 @@ bool CommandChannel::Bind(IOLoop *loop) {
   }
 
   loop_->AddDelegate(sock_, this);
+  last_heartbeat_ = steady_clock::now();
   return true;
 }
 
@@ -118,11 +120,11 @@ void CommandChannel::SendAsync(const Command &command) {
   }
 }
 
-void CommandChannel::OnTimer(apr_time_t now) {
+void CommandChannel::OnTimer(TimePoint now) {
   list<Command> timeout_commands;
-  map<uint16_t, pair<Command, apr_time_t> >::iterator ite = commands_.begin();
+  map<uint16_t, pair<Command, TimePoint> >::iterator ite = commands_.begin();
   while (ite != commands_.end()) {
-    pair<Command, apr_time_t> &command_pair = ite->second;
+    pair<Command, TimePoint> &command_pair = ite->second;
     if (now > command_pair.second) {
       timeout_commands.push_back(command_pair.first);
       commands_.erase(ite++);
@@ -132,7 +134,7 @@ void CommandChannel::OnTimer(apr_time_t now) {
   }
 
   for (list<Command>::iterator ite = timeout_commands.begin(); ite != timeout_commands.end(); ++ite) {
-    LOG_WARN("Apr time now: {}, Command Timeout: Set {}, Id {}, Seq {}", PrintAPRTime(apr_time_now()), 
+    LOG_WARN("Command Timeout: Set {}, Id {}, Seq {}",
         (uint16_t)ite->packet.cmd_set, ite->packet.cmd_code, ite->packet.seq_num);
     if (callback_) {
       ite->packet.packet_type = kCommandTypeAck;
@@ -140,7 +142,7 @@ void CommandChannel::OnTimer(apr_time_t now) {
     }
   }
 
-  if ((last_heartbeat_ != 0) && (now - last_heartbeat_ > apr_time_from_sec(3))) {
+  if (now - last_heartbeat_ > std::chrono::seconds(3)) {
     DeviceDisconnect(handle_);
   } else {
     HeartBeat(now);
@@ -165,13 +167,13 @@ void CommandChannel::Uninit() {
   }
 
   commands_.clear();
-  last_heartbeat_ = 0;
-  heartbeat_time_ = 0;
+  last_heartbeat_ = {};
+  heartbeat_time_ = {};
   remote_ip_ = "";
 }
 
-void CommandChannel::HeartBeat(apr_time_t t) {
-  if (heartbeat_time_ == 0 || (t - heartbeat_time_) > apr_time_from_msec(kHeartbeatTimer)) {
+void CommandChannel::HeartBeat(TimePoint t) {
+  if (heartbeat_time_ == TimePoint() || (t - heartbeat_time_) > kHeartbeatTimer) {
     heartbeat_time_ = t;
 
     Command command(handle_,
@@ -230,7 +232,7 @@ Command CommandChannel::DeepCopy(const Command &cmd) {
 }
 
 void CommandChannel::OnHeartbeatAck(const CommPacket &) {
-  last_heartbeat_ = apr_time_now();
+  last_heartbeat_ = steady_clock::now();
 }
 
 void CommandChannel::DeviceDisconnect(uint8_t handle) {
@@ -240,7 +242,7 @@ void CommandChannel::DeviceDisconnect(uint8_t handle) {
 void CommandChannel::Send(const Command &command) {
   LOG_INFO(" Send Command: Set {} Id {} Seq {}", (uint16_t)command.packet.cmd_set, command.packet.cmd_code, command.packet.seq_num);
   SendInternal(command);
-  commands_[command.packet.seq_num] = make_pair(command, apr_time_now() + apr_time_from_msec(command.time_out));
+  commands_[command.packet.seq_num] = make_pair(command, steady_clock::now() + std::chrono::milliseconds(command.time_out));
   Command &cmd = commands_[command.packet.seq_num].first;
   if (cmd.packet.data != NULL) {
     delete[] cmd.packet.data;

@@ -43,6 +43,7 @@
 using std::tuple;
 using std::string;
 using std::vector;
+using std::chrono::steady_clock;
 
 namespace livox {
 
@@ -119,11 +120,11 @@ void DeviceDiscovery::OnData(apr_socket_t *sock, void *) {
   }
 }
 
-void DeviceDiscovery::OnTimer(apr_time_t now) {
+void DeviceDiscovery::OnTimer(TimePoint now) {
   ConnectingDeviceMap::iterator ite = connecting_devices_.begin();
   while (ite != connecting_devices_.end()) {
-    tuple<apr_pool_t *, apr_time_t, DeviceInfo> &device_tuple = ite->second;
-    if (now - std::get<1>(device_tuple) > apr_time_from_msec(500)) {
+    tuple<apr_pool_t *, TimePoint, DeviceInfo> &device_tuple = ite->second;
+    if (now - std::get<1>(device_tuple) > std::chrono::milliseconds(500)) {
       loop_->RemoveDelegate(ite->first, this);
       apr_socket_close(ite->first);
       apr_pool_destroy(std::get<0>(device_tuple));
@@ -209,7 +210,7 @@ void DeviceDiscovery::OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr
   }
 
   loop_->AddDelegate(cmd_sock, this);
-  OnTimer(apr_time_now());
+  OnTimer(steady_clock::now());
   std::get<0>(connecting_devices_[cmd_sock]) = pool;
   std::get<2>(connecting_devices_[cmd_sock]) = lidar_info;
 
@@ -246,7 +247,7 @@ void DeviceDiscovery::OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr
       result = false;
       break;
     }
-    std::get<1>(connecting_devices_[cmd_sock]) = apr_time_now();
+    std::get<1>(connecting_devices_[cmd_sock]) = steady_clock::now();
     result = true;
   } while (0);
 

@@ -140,6 +140,7 @@ void LidarGetExtrinsicFromXml(uint8_t handle) {
   LvxDeviceInfo lidar_info;
   ParseExtrinsicXml(devices[handle], lidar_info);
   lvx_file_handler.AddDeviceInfo(lidar_info);
+  lidar_info.extrinsic_enable = true;
   if (lvx_file_handler.GetDeviceInfoListSize() == broadcast_code_list.size()) {
     is_finish_extrinsic_parameter = true;
     extrinsic_condition.notify_one();

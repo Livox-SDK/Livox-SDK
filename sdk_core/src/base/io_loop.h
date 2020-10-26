@@ -43,10 +43,11 @@ namespace livox {
 
 class IOLoop : public noncopyable {
  public:
+  typedef std::chrono::steady_clock::time_point TimePoint;
   class IOLoopDelegate {
    public:
     virtual void OnData(apr_socket_t *, void *) {}
-    virtual void OnTimer(apr_time_t) {}
+    virtual void OnTimer(TimePoint) {}
     virtual void OnWake() {}
   };
 
@@ -54,7 +55,7 @@ class IOLoop : public noncopyable {
 
  public:
   explicit IOLoop(apr_pool_t *mem_pool, bool enable_timer = true, bool enable_wake = true)
-      : pollset_(NULL), mem_pool_(mem_pool), last_timeout_(0), enable_timer_(enable_timer), enable_wake_(enable_wake){};
+      : pollset_(NULL), mem_pool_(mem_pool), last_timeout_(), enable_timer_(enable_timer), enable_wake_(enable_wake){};
 
   bool Init();
   void Uninit();
@@ -78,7 +79,7 @@ class IOLoop : public noncopyable {
   DelegatesType delegates_;
   apr_pollset_t *pollset_;
   apr_pool_t *mem_pool_;
-  apr_time_t last_timeout_;
+  TimePoint last_timeout_;
   std::mutex mutex_;
   bool enable_timer_;
   bool enable_wake_;

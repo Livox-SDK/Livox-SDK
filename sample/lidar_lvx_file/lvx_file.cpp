@@ -33,6 +33,7 @@
 #define RAW_POINT_NUM     100
 #define SINGLE_POINT_NUM  96
 #define DUAL_POINT_NUM    48
+#define TRIPLE_POINT_NUM  30
 #define IMU_POINT_NUM     1
 #define M_PI             3.14159265358979323846
 
@@ -135,27 +136,46 @@ void LvxFileHandle::BasePointsHandle(LivoxEthPacket *data, LvxBasePackDetail &pa
   packet.timestamp_type = data->timestamp_type;
   packet.data_type = data->data_type;
   memcpy(packet.timestamp, data->timestamp, 8 * sizeof(uint8_t));
-  if (packet.data_type == 0) {
-    packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) + RAW_POINT_NUM*sizeof(LivoxRawPoint);
-    memcpy(packet.raw_point,(void *)data->data,RAW_POINT_NUM*sizeof(LivoxRawPoint));
-  } else if(packet.data_type == 1){
-    packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +RAW_POINT_NUM*sizeof(LivoxSpherPoint);
-    memcpy(packet.raw_point,(void *)data->data,RAW_POINT_NUM*sizeof(LivoxSpherPoint));
-  } else if(packet.data_type == 2){
-    packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +SINGLE_POINT_NUM*sizeof(LivoxExtendRawPoint);
-    memcpy(packet.raw_point,(void *)data->data,SINGLE_POINT_NUM*sizeof(LivoxExtendRawPoint));
-  } else if(packet.data_type == 3){
-    packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +SINGLE_POINT_NUM*sizeof(LivoxExtendSpherPoint);
-    memcpy(packet.raw_point,(void *)data->data,SINGLE_POINT_NUM*sizeof(LivoxExtendSpherPoint));
-  } else if(packet.data_type == 4){
-    packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +DUAL_POINT_NUM*sizeof(LivoxDualExtendRawPoint);
-    memcpy(packet.raw_point,(void *)data->data,DUAL_POINT_NUM*sizeof(LivoxDualExtendRawPoint));
-  } else if(packet.data_type == 5){
-    packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +DUAL_POINT_NUM*sizeof(LivoxDualExtendSpherPoint);
-    memcpy(packet.raw_point,(void *)data->data,DUAL_POINT_NUM*sizeof(LivoxDualExtendSpherPoint));
-  } else if(packet.data_type == 6){
-    packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +IMU_POINT_NUM*sizeof(LivoxImuPoint);
-    memcpy(packet.raw_point,(void *)data->data,IMU_POINT_NUM*sizeof(LivoxImuPoint));
+  switch (packet.data_type) {
+    case PointDataType::kCartesian:
+       packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point) - \
+          sizeof(packet.pack_size) + RAW_POINT_NUM*sizeof(LivoxRawPoint);
+      memcpy(packet.raw_point,(void *)data->data, RAW_POINT_NUM*sizeof(LivoxRawPoint));
+      break;
+    case PointDataType::kSpherical :
+      packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +RAW_POINT_NUM*sizeof(LivoxSpherPoint);
+      memcpy(packet.raw_point,(void *)data->data, RAW_POINT_NUM*sizeof(LivoxSpherPoint));
+      break;
+    case PointDataType::kExtendCartesian :
+      packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +SINGLE_POINT_NUM*sizeof(LivoxExtendRawPoint);
+      memcpy(packet.raw_point,(void *)data->data, SINGLE_POINT_NUM*sizeof(LivoxExtendRawPoint));
+      break;
+    case PointDataType::kExtendSpherical :
+      packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +SINGLE_POINT_NUM*sizeof(LivoxExtendSpherPoint);
+      memcpy(packet.raw_point,(void *)data->data, SINGLE_POINT_NUM*sizeof(LivoxExtendSpherPoint));
+      break;
+    case PointDataType::kDualExtendCartesian :
+      packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +DUAL_POINT_NUM*sizeof(LivoxDualExtendRawPoint);
+      memcpy(packet.raw_point,(void *)data->data, DUAL_POINT_NUM*sizeof(LivoxDualExtendRawPoint));
+      break;
+    case PointDataType::kDualExtendSpherical :
+      packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +DUAL_POINT_NUM*sizeof(LivoxDualExtendSpherPoint);
+      memcpy(packet.raw_point,(void *)data->data, DUAL_POINT_NUM*sizeof(LivoxDualExtendSpherPoint));
+      break;
+    case PointDataType::kImu :
+      packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +IMU_POINT_NUM*sizeof(LivoxImuPoint);
+      memcpy(packet.raw_point,(void *)data->data, IMU_POINT_NUM*sizeof(LivoxImuPoint));
+      break;
+    case PointDataType::kTripleExtendCartesian :
+      packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +TRIPLE_POINT_NUM*sizeof(LivoxTripleExtendRawPoint);
+      memcpy(packet.raw_point,(void *)data->data, TRIPLE_POINT_NUM*sizeof(LivoxTripleExtendRawPoint));
+      break;
+    case PointDataType::kTripleExtendSpherical :
+      packet.pack_size = sizeof(LvxBasePackDetail) - sizeof(packet.raw_point)- sizeof(packet.pack_size) +TRIPLE_POINT_NUM*sizeof(LivoxTripleExtendSpherPoint);
+      memcpy(packet.raw_point,(void *)data->data, TRIPLE_POINT_NUM*sizeof(LivoxTripleExtendSpherPoint));
+      break;
+    default:
+      break;
   }
 }
 

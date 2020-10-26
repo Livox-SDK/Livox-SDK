@@ -175,6 +175,10 @@ void LdsHub::OnHubDataCb(uint8_t hub_handle, LivoxEthPacket *data,
         LivoxDualExtendSpherPoint *p_point_data = (LivoxDualExtendSpherPoint *)data->data;
       }else if ( data ->data_type == kImu) {
         LivoxImuPoint *p_point_data = (LivoxImuPoint *)data->data;
+      }else if ( data ->data_type == kTripleExtendCartesian) {
+        LivoxTripleExtendRawPoint *p_point_data = (LivoxTripleExtendRawPoint *)data->data;
+      }else if ( data ->data_type == kTripleExtendSpherical) {
+        LivoxTripleExtendSpherPoint *p_point_data = (LivoxTripleExtendSpherPoint *)data->data;
       }
     }
   }
@@ -517,7 +521,7 @@ void LdsHub::AddLocalBroadcastCode(void) {
   for (size_t i = 0; i < sizeof(local_broadcast_code_list)/sizeof(intptr_t); ++i) {
     std::string invalid_bd = "000000000";
     printf("Local broadcast code : %s\n", local_broadcast_code_list[i]);
-    if ((kBroadcastCodeSize == strlen(local_broadcast_code_list[i]) - 1) && \
+    if ((kBroadcastCodeSize == strlen(local_broadcast_code_list[i]) + 1) && \
         (nullptr == strstr(local_broadcast_code_list[i], invalid_bd.c_str()))) {
       AddBroadcastCodeToWhitelist(local_broadcast_code_list[i]);
     } else {

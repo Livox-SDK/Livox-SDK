@@ -28,6 +28,7 @@
 #include <map>
 #include <list>
 #include <string>
+#include <chrono>
 #include "apr_network_io.h"
 #include "base/io_loop.h"
 #include "comm/comm_port.h"
@@ -71,6 +72,8 @@ class CommandChannelDelegate {
  */
 class CommandChannel : public IOLoop::IOLoopDelegate {
  public:
+  typedef std::chrono::steady_clock::time_point TimePoint;
+
   CommandChannel(apr_port_t port,
                  uint8_t handle,
                  const std::string &remote_ip,
@@ -95,31 +98,31 @@ class CommandChannel : public IOLoop::IOLoopDelegate {
   void SendAsync(const Command &command);
 
   void OnData(apr_socket_t *, void *);
-  void OnTimer(apr_time_t now);
+  void OnTimer(TimePoint now);
 
   static uint16_t GenerateSeq();
 
  private:
   void Send(const Command &cmd);
-  void HeartBeat(apr_time_t t);
+  void HeartBeat(TimePoint t);
   void SendInternal(const Command &command);
   Command DeepCopy(const Command &cmd);
   void OnHeartbeatAck(const CommPacket &packet);
   void DeviceDisconnect(uint8_t handle);
 
  private:
-  static const int kHeartbeatTimer = 800;
+  const std::chrono::milliseconds kHeartbeatTimer = std::chrono::milliseconds(800);
   uint8_t handle_;
   apr_port_t port_;
   apr_socket_t *sock_;
   apr_pool_t *mem_pool_;
   IOLoop *loop_;
   CommandChannelDelegate *callback_;
-  std::map<uint16_t, std::pair<Command, apr_time_t> > commands_;
+  std::map<uint16_t, std::pair<Command, TimePoint> > commands_;
   std::unique_ptr<CommPort> comm_port_;
-  apr_time_t heartbeat_time_;
+  TimePoint heartbeat_time_;
   std::string remote_ip_;
-  apr_time_t last_heartbeat_;
+  TimePoint last_heartbeat_;
 };
 
 }  // namespace livox

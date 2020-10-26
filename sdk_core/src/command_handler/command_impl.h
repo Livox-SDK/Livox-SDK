@@ -115,6 +115,7 @@ static const uint16_t GeneralCommandTimeout[kCommandIDGeneralCommandCount] = {KD
                                                                               KDefaultTimeOut,
                                                                               KDefaultTimeOut,
                                                                               KDefaultTimeOut,
+                                                                              KDefaultTimeOut,
                                                                               KDefaultTimeOut,};
 
 /**  Enum that represents the command id. */

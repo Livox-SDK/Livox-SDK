@@ -167,6 +167,10 @@ void LdsLidar::GetLidarDataCb(uint8_t handle, LivoxEthPacket *data,
         LivoxDualExtendSpherPoint *p_point_data = (LivoxDualExtendSpherPoint *)data->data;
       }else if ( data ->data_type == kImu) {
         LivoxImuPoint *p_point_data = (LivoxImuPoint *)data->data;
+      }else if ( data ->data_type == kTripleExtendCartesian) {
+        LivoxTripleExtendRawPoint *p_point_data = (LivoxTripleExtendRawPoint *)data->data;
+      }else if ( data ->data_type == kTripleExtendSpherical) {
+        LivoxTripleExtendSpherPoint *p_point_data = (LivoxTripleExtendSpherPoint *)data->data;
       }
     }
   }
@@ -261,7 +265,7 @@ void LdsLidar::OnDeviceChange(const DeviceInfo *info, DeviceEvent type) {
         p_lidar->config.set_bits |= kConfigReturnMode;
       }
 
-      if (kDeviceTypeLidarMid40 != info->type) {
+      if (kDeviceTypeLidarMid40 != info->type && kDeviceTypeLidarMid70 != info->type) {
         LidarSetImuPushFrequency(handle, (ImuFreq)(p_lidar->config.imu_rate),\
                                  LdsLidar::SetImuRatePushFrequencyCb, g_lidars);
         p_lidar->config.set_bits |= kConfigImuRate;
@@ -443,7 +447,7 @@ void LdsLidar::AddLocalBroadcastCode(void) {
   for (size_t i=0; i<sizeof(local_broadcast_code_list)/sizeof(intptr_t); ++i) {
     std::string invalid_bd = "000000000";
     printf("Local broadcast code : %s\n", local_broadcast_code_list[i]);
-    if ((kBroadcastCodeSize == strlen(local_broadcast_code_list[i]) - 1) && \
+    if ((kBroadcastCodeSize == strlen(local_broadcast_code_list[i]) + 1) && \
         (nullptr == strstr(local_broadcast_code_list[i], invalid_bd.c_str()))) {
       LdsLidar::AddBroadcastCodeToWhitelist(local_broadcast_code_list[i]);
     } else {

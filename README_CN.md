@@ -26,7 +26,7 @@ Livox LiDAR 传感器可以直接连接主机或者通过 Livox Hub 连接到主
 
 # 4 Livox SDK 应用接口
 
-Livox SDK 应用接口提供了一系列 C 风格的接口，可以很方便地集成进 C/C++ 程序。请查阅 [Livox SDK API Reference](https://livox-sdk.github.io/Livox-SDK/) 获取更多信息。
+Livox SDK 应用接口提供了一系列 C 风格的接口，可以很方便地集成进 C/C++ 程序。请查阅 [Livox SDK API Reference](https://livox-sdk.github.io/Livox-SDK-Doc/) 获取更多信息。
 
 ## 4.1 安装
 以下将介绍 Ubuntu 18.04/16.04/14.04 LTS 系统、 Windows 7/10 系统和 ARM-Linux 交叉编译的安装过程. 对于 Ubuntu 18.04/16.04/14.04 32-bit LTS 和 Mac 系统, 您可以查阅 [Livox-SDK wiki](https://github.com/Livox-SDK/Livox-SDK/wiki)。
