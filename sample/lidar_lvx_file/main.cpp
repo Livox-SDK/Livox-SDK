@@ -22,11 +22,10 @@
 // SOFTWARE.
 //
 
-#include <apr_general.h>
-#include <apr_getopt.h>
 #include <algorithm>
 #include <string.h>
 #include "lvx_file.h"
+#include "cmdline.h"
 
 DeviceItem devices[kMaxLidarCount];
 LvxFileHandle lvx_file_handler;
@@ -42,7 +41,6 @@ bool is_read_extrinsic_from_xml = false;
 uint8_t connected_lidar_count = 0;
 
 #define FRAME_RATE 20
-
 
 using namespace std::chrono;
 
@@ -270,7 +268,7 @@ void AddDevicesToConnect() {
       continue;
     }
     uint8_t handle = 0;
-    bool result = AddLidarToConnect(broadcast_code_rev[i].c_str(), &handle);
+    livox_status result = AddLidarToConnect(broadcast_code_rev[i].c_str(), &handle);
     if (result == kStatusSuccess) {
       /** Set the point cloud data for a specific Livox LiDAR. */
       SetDataCallback(handle, GetLidarData, nullptr);
@@ -281,104 +279,46 @@ void AddDevicesToConnect() {
   }
 }
 
-
 /** Set the program options.
 * You can input the registered device broadcast code and decide whether to save the log file.
 */
-int SetProgramOption(int argc, const char *argv[]) {
-  apr_status_t rv;
-  apr_pool_t *mp = nullptr;
-  static const apr_getopt_option_t opt_option[] = {
-    /** Long-option, short-option, has-arg flag, description */
-    { "code", 'c', 1, "Register device broadcast code" },
-    { "log", 'l', 0, "Save the log file" },
-    { "time", 't', 1, "Time to save point cloud to the lvx file" },
-    { "param", 'p', 0, "Get the extrinsic parameter from extrinsic.xml file" },
-    { "help", 'h', 0, "Show help" },
-    { nullptr, 0, 0, nullptr },
-  };
-  apr_getopt_t *opt = nullptr;
-  int optch = 0;
-  const char *optarg = nullptr;
-
-  if (apr_initialize() != APR_SUCCESS) {
-    return -1;
+void SetProgramOption(int argc, const char *argv[]) {
+  cmdline::parser cmd;
+  cmd.add<std::string>("code", 'c', "Register device broadcast code", false);
+  cmd.add("log", 'l', "Save the log file");
+  cmd.add<int>("time", 't', "Time to save point cloud to the lvx file", false);
+  cmd.add("param", 'p', "Get the extrinsic parameter from extrinsic.xml file");
+  cmd.add("help", 'h', "Show help");
+  cmd.parse_check(argc, const_cast<char **>(argv));
+  if (cmd.exist("code")) {
+    std::string sn_list = cmd.get<std::string>("code");
+    printf("Register broadcast code: %s\n", sn_list.c_str());
+    size_t pos = 0;
+    broadcast_code_list.clear();
+    while ((pos = sn_list.find("&")) != std::string::npos) {
+      broadcast_code_list.push_back(sn_list.substr(0, pos));
+      sn_list.erase(0, pos + 1);
+    }
+    broadcast_code_list.push_back(sn_list);
   }
-
-  if (apr_pool_create(&mp, NULL) != APR_SUCCESS) {
-    return -1;
+  if (cmd.exist("log")) {
+    printf("Save the log file.\n");
+    SaveLoggerFile();
   }
-
-  rv = apr_getopt_init(&opt, mp, argc, argv);
-  if (rv != APR_SUCCESS) {
-    printf("Program options initialization failed.\n");
-    return -1;
+  if (cmd.exist("time")) {
+    printf("Time to save point cloud to the lvx file:%d.\n", cmd.get<int>("time"));
+    lvx_file_save_time = cmd.get<int>("time");
   }
-
-  /** Parse the all options based on opt_option[] */
-  bool is_help = false;
-  while ((rv = apr_getopt_long(opt, opt_option, &optch, &optarg)) == APR_SUCCESS) {
-    switch (optch) {
-    case 'c': {
-      printf("Register broadcast code: %s\n", optarg);
-      char *sn_list = (char *)malloc(sizeof(char)*(strlen(optarg) + 1));
-      strncpy(sn_list, optarg, sizeof(char)*(strlen(optarg) + 1));
-      char *sn_list_head = sn_list;
-      sn_list = strtok(sn_list, "&");
-      int i = 0;
-      broadcast_code_list.clear();
-      while (sn_list) {
-        broadcast_code_list.push_back(sn_list);
-        sn_list = strtok(nullptr, "&");
-        i++;
-      }
-      free(sn_list_head);
-      sn_list_head = nullptr;
-      break;
-    }
-    case 'l': {
-      printf("Save the log file.\n");
-      SaveLoggerFile();
-      break;
-    }
-    case 't': {
-      printf("Time to save point cloud to the lvx file:%s.\n", optarg);
-      lvx_file_save_time = atoi(optarg);
-      break;
-    }
-    case 'p': {
-      printf("Get the extrinsic parameter from extrinsic.xml file.\n");
-      is_read_extrinsic_from_xml = true;
-      break;
-    }
-    case 'h': {
-      printf(
-        " [-c] Register device broadcast code\n"
-        " [-l] Save the log file\n"
-        " [-t] Time to save point cloud to the lvx file\n"
-        " [-p] Get the extrinsic parameter from extrinsic.xml file\n"
-        " [-h] Show help\n"
-      );
-      is_help = true;
-      break;
-    }
-    }
+  if (cmd.exist("param")) {
+    printf("Get the extrinsic parameter from extrinsic.xml file.\n");
+    is_read_extrinsic_from_xml = true;
   }
-  if (rv != APR_EOF) {
-    printf("Invalid options.\n");
-  }
-
-  apr_pool_destroy(mp);
-  mp = nullptr;
-  if (is_help)
-    return 1;
-  return 0;
+  return;
 }
 
 int main(int argc, const char *argv[]) {
 /** Set the program options. */
-  if (SetProgramOption(argc, argv))
-    return 0;
+  SetProgramOption(argc, argv);
 
   printf("Livox SDK initializing.\n");
 /** Initialize Livox-SDK. */

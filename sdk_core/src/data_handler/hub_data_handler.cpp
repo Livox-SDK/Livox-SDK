@@ -24,7 +24,14 @@
 
 #include "hub_data_handler.h"
 #include <base/logging.h>
-#include "base/network_util.h"
+#include "base/network/network_util.h"
+#ifdef WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <ws2def.h>
+#else
+#include "arpa/inet.h"
+#endif
 
 namespace livox {
 
@@ -43,12 +50,11 @@ void HubDataHandlerImpl::Uninit() {
     thread_.reset(NULL);
   }
 
-  if (sock_) {
-    apr_socket_close(sock_);
-    sock_ = NULL;
+  if (sock_ > 0) {
+    util::CloseSock(sock_);
+    sock_ = -1;
   }
   is_valid_ = false;
-  mem_pool_ = NULL;
 }
 
 bool HubDataHandlerImpl::AddDevice(const DeviceInfo &info) {
@@ -58,23 +64,29 @@ bool HubDataHandlerImpl::AddDevice(const DeviceInfo &info) {
   is_valid_ = true;
   hub_info_ = info;
 
-  sock_ = util::CreateBindSocket(info.data_port, mem_pool_);
-  if (sock_ == NULL) {
+  sock_ = util::CreateSocket(info.data_port);
+  if (sock_ < 0) {
     is_valid_ = false;
     return false;
   }
-
-  thread_->loop()->AddDelegate(sock_, this);
+  auto loop = thread_->loop();
+  if (!loop.expired()) {
+    loop.lock()->AddDelegate(sock_, this);
+  }
   return true;
 }
 
-void HubDataHandlerImpl::OnData(apr_socket_t *, void *) {
-  apr_sockaddr_t addr;
+void HubDataHandlerImpl::OnData(socket_t, void *) {
+  struct sockaddr addr;
+  int addrlen = sizeof(addr);
   if (buf_.size() < kMaxBufferSize) {
     buf_.resize(kMaxBufferSize);
   }
-  apr_size_t size = kMaxBufferSize;
-  apr_socket_recvfrom(&addr, sock_, 0, &buf_[0], &size);
+  int size = kMaxBufferSize;
+  size = util::RecvFrom(sock_, reinterpret_cast<char *>(&buf_[0]), kMaxBufferSize, 0, &addr, &addrlen);
+  if (size <= 0) {
+    return;
+  }
 
   if (handler_) {
     handler_->OnDataCallback(hub_info_.handle, &buf_[0], size);
@@ -83,9 +95,12 @@ void HubDataHandlerImpl::OnData(apr_socket_t *, void *) {
 
 void HubDataHandlerImpl::RemoveDevice(uint8_t handle) {
   if (handle == hub_info_.handle) {
-    thread_->loop()->RemoveDelegate(sock_, this);
-    apr_socket_close(sock_);
-    sock_ = NULL;
+    auto loop = thread_->loop();
+    if (!loop.expired()) {
+      loop.lock()->RemoveDelegate(sock_, this);
+    }
+    util::CloseSock(sock_);
+    sock_ = -1;
     is_valid_ = false;
   }
 }

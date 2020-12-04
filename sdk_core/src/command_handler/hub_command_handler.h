@@ -31,16 +31,15 @@
 namespace livox {
 class HubCommandHandlerImpl : public CommandHandlerImpl {
  public:
-  HubCommandHandlerImpl(CommandHandler *handler, apr_pool_t *pool, IOLoop *loop)
-      : CommandHandlerImpl(handler), mem_pool_(pool), loop_(loop), is_valid_(false) {}
+  HubCommandHandlerImpl(CommandHandler *handler, std::weak_ptr<IOLoop> loop)
+      : CommandHandlerImpl(handler), loop_(loop), is_valid_(false) {}
   void Uninit();
   bool AddDevice(const DeviceInfo &info);
   bool RemoveDevice(uint8_t handle);
   livox_status SendCommand(uint8_t handle, const Command &command);
 
  private:
-  apr_pool_t *mem_pool_;
-  IOLoop *loop_;
+  std::weak_ptr<IOLoop> loop_;
   bool is_valid_;
   DeviceInfo hub_info_;
   std::unique_ptr<CommandChannel> channel_;

@@ -27,15 +27,8 @@
 #include <mutex>
 #include <iostream>
 #include <vector>
-#include "apr_network_io.h"
-#include "apr_pools.h"
-#ifdef WIN32
-#include "winsock.h"
-#else
-#include "arpa/inet.h"
-#endif
 #include "base/logging.h"
-#include "base/network_util.h"
+#include "base/network/network_util.h"
 #include "command_handler/command_impl.h"
 #include "device_manager.h"
 #include "livox_def.h"
@@ -45,48 +38,43 @@ using std::string;
 using std::vector;
 using std::chrono::steady_clock;
 
+
 namespace livox {
 
 uint16_t DeviceDiscovery::port_count = 0;
 
 bool DeviceDiscovery::Init() {
-  apr_status_t rv = apr_pool_create(&mem_pool_, NULL);
-  if (rv != APR_SUCCESS) {
-    LOG_ERROR(PrintAPRStatus(rv));
-    return false;
-  }
   if (comm_port_ == NULL) {
     comm_port_.reset(new CommPort());
   }
   return true;
 }
 
-bool DeviceDiscovery::Start(IOLoop *loop) {
-  if (loop == NULL) {
+bool DeviceDiscovery::Start(std::weak_ptr<IOLoop> loop) {
+  if (loop.expired()) {
     return false;
   }
   loop_ = loop;
-  sock_ = util::CreateBindSocket(kListenPort, mem_pool_, true);
-  if (sock_ == NULL) {
-    LOG_ERROR("DeviceDiscovery Create Socket Failed");
+  sock_ = util::CreateSocket(kListenPort);
+  if (sock_ < 0) {
     return false;
   }
-  loop_->AddDelegate(sock_, this);
+  loop_.lock()->AddDelegate(sock_, this);
   return true;
 }
 
-void DeviceDiscovery::OnData(apr_socket_t *sock, void *) {
-  apr_sockaddr_t addr;
+void DeviceDiscovery::OnData(socket_t sock, void *) {
+  struct sockaddr addr;
+  int addrlen = sizeof(addr);
   uint32_t buf_size = 0;
   uint8_t *cache_buf = comm_port_->FetchCacheFreeSpace(&buf_size);
-  apr_size_t size = buf_size;
-  apr_status_t rv = apr_socket_recvfrom(&addr, sock, 0, reinterpret_cast<char *>(cache_buf), &size);
-
-  comm_port_->UpdateCacheWrIdx(size);
-  if (rv != APR_SUCCESS) {
-    LOG_WARN(" Receive Failed {}", PrintAPRStatus(rv));
+  int size = buf_size;
+  size = util::RecvFrom(sock, reinterpret_cast<char *>(cache_buf), buf_size, 0, &addr, &addrlen);
+  if (size < 0) {
     return;
   }
+
+  comm_port_->UpdateCacheWrIdx(size);
   CommPacket packet;
   memset(&packet, 0, sizeof(packet));
 
@@ -97,10 +85,11 @@ void DeviceDiscovery::OnData(apr_socket_t *sock, void *) {
       if (connecting_devices_.find(sock) == connecting_devices_.end()) {
         continue;
       }
-      DeviceInfo info = std::get<2>(connecting_devices_[sock]);
-      loop_->RemoveDelegate(sock, this);
-      apr_socket_close(sock);
-      apr_pool_destroy(std::get<0>(connecting_devices_[sock]));
+      DeviceInfo info = std::get<1>(connecting_devices_[sock]);
+      if (!loop_.expired()) {
+        loop_.lock()->RemoveDelegate(sock, this);
+      }
+      util::CloseSock(sock);
       connecting_devices_.erase(sock);
 
       if (packet.data == NULL) {
@@ -123,11 +112,12 @@ void DeviceDiscovery::OnData(apr_socket_t *sock, void *) {
 void DeviceDiscovery::OnTimer(TimePoint now) {
   ConnectingDeviceMap::iterator ite = connecting_devices_.begin();
   while (ite != connecting_devices_.end()) {
-    tuple<apr_pool_t *, TimePoint, DeviceInfo> &device_tuple = ite->second;
-    if (now - std::get<1>(device_tuple) > std::chrono::milliseconds(500)) {
-      loop_->RemoveDelegate(ite->first, this);
-      apr_socket_close(ite->first);
-      apr_pool_destroy(std::get<0>(device_tuple));
+    tuple<TimePoint, DeviceInfo> &device_tuple = ite->second;
+    if (now - std::get<0>(device_tuple) > std::chrono::milliseconds(500)) {
+      if (!loop_.expired()) {
+        loop_.lock()->RemoveDelegate(ite->first, this);
+      }
+      util::CloseSock(ite->first);
       connecting_devices_.erase(ite++);
     } else {
       ++ite;
@@ -136,23 +126,20 @@ void DeviceDiscovery::OnTimer(TimePoint now) {
 }
 
 void DeviceDiscovery::Uninit() {
-  if (sock_) {
-    loop_->RemoveDelegate(sock_, this);
-    apr_socket_close(sock_);
-    sock_ = NULL;
+  if (sock_ > 0) {
+    if (!loop_.expired()) {
+      loop_.lock()->RemoveDelegate(sock_, this);
+    }
+    util::CloseSock(sock_);
+    sock_ = -1;
   }
 
   if (comm_port_) {
     comm_port_.reset(NULL);
   }
-
-  if (mem_pool_) {
-    apr_pool_destroy(mem_pool_);
-    mem_pool_ = NULL;
-  }
 }
 
-void DeviceDiscovery::OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr) {
+void DeviceDiscovery::OnBroadcast(const CommPacket &packet,  struct sockaddr *addr) {
   if (packet.data == NULL) {
     return;
   }
@@ -164,11 +151,7 @@ void DeviceDiscovery::OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr
 
   char ip[16];
   memset(&ip, 0, sizeof(ip));
-  apr_status_t rv = apr_sockaddr_ip_getbuf(ip, sizeof(ip), addr);
-  if (rv != APR_SUCCESS) {
-    LOG_ERROR(PrintAPRStatus(rv));
-    return;
-  }
+  inet_ntop(AF_INET, &((struct sockaddr_in*)addr)->sin_addr, ip, INET_ADDRSTRLEN);
   strncpy(device_info.ip, ip, sizeof(device_info.ip));
   
   device_manager().BroadcastDevices(&device_info);
@@ -195,35 +178,28 @@ void DeviceDiscovery::OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr
   lidar_info.status.progress = 0;
 
   strncpy(lidar_info.ip, ip, sizeof(lidar_info.ip));
-  apr_pool_t *pool = NULL;
-  rv = apr_pool_create(&pool, mem_pool_);
-  if (rv != APR_SUCCESS) {
-    LOG_ERROR(PrintAPRStatus(rv));
+
+  socket_t cmd_sock = util::CreateSocket(lidar_info.cmd_port);
+  if (cmd_sock < 0) {
     return;
   }
-
-  apr_socket_t *cmd_sock = util::CreateBindSocket(lidar_info.cmd_port, pool);
-  if (cmd_sock == NULL) {
-    apr_pool_destroy(pool);
-    pool = NULL;
-    return;
+  if (!loop_.expired()) {
+    loop_.lock()->AddDelegate(cmd_sock, this);
   }
-
-  loop_->AddDelegate(cmd_sock, this);
   OnTimer(steady_clock::now());
-  std::get<0>(connecting_devices_[cmd_sock]) = pool;
-  std::get<2>(connecting_devices_[cmd_sock]) = lidar_info;
+  std::get<1>(connecting_devices_[cmd_sock]) = lidar_info;
 
   bool result = false;
   do {
     HandshakeRequest handshake_req;
     uint32_t local_ip = 0;
-    if (util::FindLocalIp(addr->sa.sin, local_ip) == false) {
+    if (util::FindLocalIp(*(struct sockaddr_in*)addr, local_ip) == false) {
       result = false;
       LOG_INFO("LocalIp and DeviceIp are not in same subnet");
       break;
     }
     LOG_INFO("LocalIP: {}", inet_ntoa(*(struct in_addr *)&local_ip));
+    LOG_INFO("DeviceIP: {}", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
     LOG_INFO("Command Port: {}", lidar_info.cmd_port);
     LOG_INFO("Data Port: {}", lidar_info.data_port);
     CommPacket packet;
@@ -240,21 +216,21 @@ void DeviceDiscovery::OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr
     packet.data = (uint8_t *)&handshake_req;
 
     vector<uint8_t> buf(kMaxCommandBufferSize + 1);
-    apr_size_t o_len = kMaxCommandBufferSize;
+    int o_len = kMaxCommandBufferSize;
     comm_port_->Pack(buf.data(), kMaxCommandBufferSize, (uint32_t *)&o_len, packet);
-    rv = apr_socket_sendto(cmd_sock, addr, 0, reinterpret_cast<const char *>(buf.data()), &o_len);
-    if (rv != APR_SUCCESS) {
-      result = false;
-      break;
+    int byte_send = sendto(cmd_sock, reinterpret_cast<const char *>(buf.data()), o_len, 0, addr, sizeof(*addr));
+    if (byte_send < 0) {
+      return;
     }
-    std::get<1>(connecting_devices_[cmd_sock]) = steady_clock::now();
+    std::get<0>(connecting_devices_[cmd_sock]) = steady_clock::now();
     result = true;
   } while (0);
 
   if (result == false) {
-    loop_->RemoveDelegate(cmd_sock, this);
-    apr_socket_close(cmd_sock);
-    apr_pool_destroy(pool);
+    if (!loop_.expired()) {
+      loop_.lock()->RemoveDelegate(cmd_sock, this);
+    }
+    util::CloseSock(cmd_sock);
     connecting_devices_.erase(cmd_sock);
   }
 }

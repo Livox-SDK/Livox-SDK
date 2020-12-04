@@ -29,6 +29,7 @@
 #include <functional>
 #include <mutex>
 #include <string>
+#include <string.h>
 #include "device_discovery.h"
 #include "livox_sdk.h"
 
@@ -53,7 +54,7 @@ typedef enum {
  */
 class DeviceManager : public noncopyable {
  public:
-  DeviceManager() : mem_pool_(NULL), device_mode_(kDeviceModeNone), connected_cb_(NULL), broadcast_cb_(NULL) {}
+  DeviceManager() : device_mode_(kDeviceModeNone), connected_cb_(NULL), broadcast_cb_(NULL) {}
 
   bool Init();
   void Uninit();
@@ -149,7 +150,6 @@ class DeviceManager : public noncopyable {
   } DetailDeviceInfo;
   typedef std::array<DetailDeviceInfo, kMaxConnectedDeviceNum> DeviceContainer;
   DeviceContainer devices_;
-  apr_pool_t *mem_pool_;
   DeviceMode device_mode_;
   std::function<void(const DeviceInfo *, DeviceEvent)> connected_cb_;
   std::function<void(const BroadcastDeviceInfo *info)> broadcast_cb_;

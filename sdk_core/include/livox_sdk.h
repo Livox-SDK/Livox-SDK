@@ -204,7 +204,7 @@ livox_status HubStopSampling(CommonCommandCallback cb, void *client_data);
  * @param  id     Livox Hub's id.
  * @return LiDAR unit handle.
  */
-livox_status HubGetLidarHandle(uint8_t slot, uint8_t id);
+uint8_t HubGetLidarHandle(uint8_t slot, uint8_t id);
 
 /**
  * Disconnect divice.

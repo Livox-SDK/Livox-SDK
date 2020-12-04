@@ -207,7 +207,7 @@ void LdsHub::OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
 
   LidarDevice* p_hub = &g_lds_hub->hub_;
   if (p_hub->connect_state == kConnectStateOff) {
-    bool result = false;
+    livox_status result = kStatusFailure;
     uint8_t handle = 0;
     result = AddHubToConnect(info->broadcast_code, &handle);
     if (result == kStatusSuccess && handle < kMaxLidarCount) {

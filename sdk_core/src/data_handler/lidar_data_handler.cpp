@@ -24,7 +24,15 @@
 
 #include "lidar_data_handler.h"
 #include <mutex>
-#include "base/network_util.h"
+#include "base/network/network_util.h"
+#ifdef WIN32
+#include <winsock2.h>
+#include <ws2def.h>
+#pragma comment(lib, "Ws2_32.lib")
+#else
+#include <unistd.h>
+#endif // WIN32
+
 
 using std::lock_guard;
 using std::mutex;
@@ -41,16 +49,14 @@ void LidarDataHandlerImpl::Uninit() {
   for (list<DeviceItem>::iterator ite = devices_.begin(); ite != devices_.end(); ++ite) {
     DeviceItem &item = *ite;
     if (item.thread) {
-      if (item.thread->loop()) {
-        item.thread->loop()->RemoveDelegate(item.sock, this);
-      }
+      item.thread->loop().lock()->RemoveDelegate(item.sock, this);
       item.thread->Quit();
       item.thread->Join();
       item.thread->Uninit();
     }
 
-    if (item.sock) {
-      apr_socket_close(item.sock);
+    if (item.sock > 0) {
+      util::CloseSock(item.sock);
     }
   }
 
@@ -58,14 +64,11 @@ void LidarDataHandlerImpl::Uninit() {
 }
 
 bool LidarDataHandlerImpl::AddDevice(const DeviceInfo &info) {
-  apr_socket_t *sock = util::CreateBindSocket(info.data_port, mem_pool_);
-  if (sock == NULL) {
-    return false;
-  }
+  socket_t sock = util::CreateSocket(info.data_port);
 
-  shared_ptr<IOThread> thread = std::make_shared<IOThread>();
+  std::shared_ptr<IOThread> thread = std::make_shared<IOThread>();
   thread->Init(false, false);
-  thread->loop()->AddDelegate(sock, this, reinterpret_cast<void *>(info.handle));
+  thread->loop().lock()->AddDelegate(sock, this, reinterpret_cast<void *>(info.handle));
   {
     lock_guard<mutex> lock(mutex_);
     DeviceItem item = {sock, thread, info.handle};
@@ -90,17 +93,19 @@ void LidarDataHandlerImpl::RemoveDevice(uint8_t handle) {
   }
 
   if (found) {
-    item.thread->loop()->RemoveDelegate(item.sock, this);
+    item.thread->loop().lock()->RemoveDelegate(item.sock, this);
     item.thread->Quit();
     item.thread->Join();
     item.thread->Uninit();
-    if (item.sock) {
-      apr_socket_close(item.sock);
+    if (item.sock > 0) {
+      util::CloseSock(item.sock);
     }
   }
 }
 
-void LidarDataHandlerImpl::OnData(apr_socket_t *sock, void *client_data) {
+void LidarDataHandlerImpl::OnData(socket_t sock, void *client_data) {
+  struct sockaddr addr;
+  int addrlen = sizeof(addr);
   uint8_t handle = static_cast<uint8_t>(reinterpret_cast<uintptr_t>(client_data));
   if (handle > data_buffers_.size()) {
     return;
@@ -110,13 +115,15 @@ void LidarDataHandlerImpl::OnData(apr_socket_t *sock, void *client_data) {
     buf.reset(new char[kMaxBufferSize]);
   }
 
-  apr_sockaddr_t addr;
-  apr_size_t size = kMaxBufferSize;
-  if (APR_SUCCESS == apr_socket_recvfrom(&addr, sock, 0, buf.get(), &size)) {
-    if (handler_) {
-      handler_->OnDataCallback(handle, buf.get(), size);
-    }
+  int size = kMaxBufferSize;
+  size = util::RecvFrom(sock, reinterpret_cast<char *>(buf.get()), kMaxBufferSize, 0, &addr, &addrlen);
+  if (size <= 0) {
+    return;
   }
+  if (handler_) {
+      handler_->OnDataCallback(handle, buf.get(), size);
+  }
+
 }
 
 }  // namespace livox

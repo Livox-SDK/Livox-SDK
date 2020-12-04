@@ -37,11 +37,11 @@ class IOThread : public ThreadBase {
   void Join();
   void Uninit();
 
-  IOLoop *loop() { return loop_.get(); }
+  std::weak_ptr<IOLoop> loop() { return loop_; }
   void ThreadFunc();
 
  private:
-  std::unique_ptr<IOLoop> loop_;
+  std::shared_ptr<IOLoop> loop_;
 };
 }  // namespace livox
 #endif  // LIVOX_IO_THREAD_H_

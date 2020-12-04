@@ -22,9 +22,6 @@
 // SOFTWARE.
 //
 
-#include <apr_thread_cond.h>
-#include <apr_thread_mutex.h>
-#include <apr_thread_proc.h>
 #include <condition_variable>
 #include <memory>
 #include <fstream>

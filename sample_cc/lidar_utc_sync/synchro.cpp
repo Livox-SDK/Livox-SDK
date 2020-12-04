@@ -268,10 +268,8 @@ void Synchro::Close() {
 
 /* Sets up the port parameters */
 int Synchro::Setup(enum BaudRate baud, enum Parity parity) {
-  static uint32_t baud_map[19] = {\
-                                   B2400, B4800, B9600, B19200, B38400, B57600,B115200, B230400,\
-                                   B460800, B500000, B576000,B921600,B1152000, B1500000, B2000000,\
-                                   B2500000, B3000000, B3500000, B4000000\
+  static uint32_t baud_map[19] = {
+                                   B2400, B4800, B9600, B19200, B38400, B57600,B115200, B230400
                                  };
   tcflag_t baudrate;
   struct termios options;
@@ -284,19 +282,18 @@ int Synchro::Setup(enum BaudRate baud, enum Parity parity) {
   usleep(10000);
 
   /* Minimum number of characters to read */
-  options.c_cc[VMIN] = 0;  
-   
+  options.c_cc[VMIN] = 0;
   /* Time to wait for data */
-  options.c_cc[VTIME] = 100; 
+  options.c_cc[VTIME] = 100;
 
   /* Enable the receiver and set local mode... */
   options.c_cflag |= (CLOCAL | CREAD);
 
   /* Set boadrate */
-  options.c_cflag &= ~CBAUD;
   baudrate = baud_map[baud];
-  options.c_cflag |= baudrate;
-  printf("[Baudrate]: %d %d\r\n", baud, baudrate);
+  cfsetispeed(&options, baudrate);
+  cfsetospeed(&options, baudrate);
+  printf("[Baudrate]: %d %u\r\n", baud, baudrate);
 
   switch (parity) {
     case P_8N1:

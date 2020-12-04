@@ -27,13 +27,20 @@
 
 #include <mutex>
 #include <string>
-#include "apr_general.h"
-#include "apr_network_io.h"
-#include "apr_pools.h"
+#include <algorithm>
 #include "base/io_thread.h"
 #include "base/noncopyable.h"
 #include "comm/comm_port.h"
 #include "command_handler/command_channel.h"
+#include <stdio.h>
+#ifdef WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <ws2def.h>
+#pragma comment(lib,"ws2_32.lib")
+#else
+#include "arpa/inet.h"
+#endif
 
 namespace livox {
 
@@ -45,7 +52,7 @@ class DeviceDiscovery : public noncopyable, IOLoop::IOLoopDelegate {
  public:
   typedef std::chrono::steady_clock::time_point TimePoint;
 
-  DeviceDiscovery() : sock_(NULL), mem_pool_(NULL), loop_(NULL), comm_port_(nullptr) {}
+  DeviceDiscovery() : comm_port_(nullptr) {}
   bool Init();
   void Uninit();
 
@@ -54,36 +61,36 @@ class DeviceDiscovery : public noncopyable, IOLoop::IOLoopDelegate {
    * @param loop IOLoop on where DeviceDiscovery runs.
    * @return true if successfully.
    */
-  bool Start(IOLoop *loop);
+  bool Start(std::weak_ptr<IOLoop> loop);
 
   /**
    * IOLoop callback delegate.
    * @param client_data client data passed in IOLoop::AddDelegate
    */
-  void OnData(apr_socket_t *, void *client_data);
+  void OnData(socket_t, void *client_data);
   void OnTimer(TimePoint now);
 
  private:
-  void OnBroadcast(const CommPacket &packet, apr_sockaddr_t *addr);
+  void OnBroadcast(const CommPacket &packet, struct sockaddr *addr);
 
  private:
   /** broadcast listening port number. */
-  static const apr_port_t kListenPort = 55000;
+  static const uint16_t kListenPort = 55000;
   /** command port number start offset. */
-  static const apr_port_t kCmdPortOffset = 500;
+  static const uint16_t kCmdPortOffset = 500;
   /** data port number start offset. */
-  static const apr_port_t kDataPortOffset = 1000;
+  static const uint16_t kDataPortOffset = 1000;
     /** sensor port number start offset. */
-  static const apr_port_t kSensorPortOffset = 1000;
+  static const uint16_t kSensorPortOffset = 1000;
 
 
   static uint16_t port_count;
-  apr_socket_t *sock_;
-  apr_pool_t *mem_pool_;
-  IOLoop *loop_;
+  socket_t sock_ = -1;
+  std::weak_ptr<IOLoop> loop_;
   std::unique_ptr<CommPort> comm_port_;
   std::mutex mutex_;
-  typedef std::map<apr_socket_t *, std::tuple<apr_pool_t *, TimePoint, DeviceInfo> > ConnectingDeviceMap;
+  typedef std::map<socket_t, std::tuple<TimePoint, DeviceInfo> > ConnectingDeviceMap;
+
   ConnectingDeviceMap connecting_devices_;
 };
 

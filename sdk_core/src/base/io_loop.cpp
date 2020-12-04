@@ -26,6 +26,7 @@
 #include <functional>
 #include <mutex>
 #include <iostream>
+#include <algorithm>
 #include "logging.h"
 
 using std::lock_guard;
@@ -33,101 +34,37 @@ using std::mutex;
 using std::vector;
 using std::chrono::steady_clock;
 
+
 namespace livox {
 
 bool IOLoop::Init() {
-  if (mem_pool_ == NULL) {
+  auto multiple_io = MultipleIOFactory::CreateMultipleIO();
+  if (!multiple_io) {
+    LOG_ERROR("Creat Multiple IO Failed!");
     return false;
   }
-
-  apr_status_t rv =
-      apr_pollset_create(&pollset_, kMaxPollCount, mem_pool_, APR_POLLSET_WAKEABLE);
-
-  if (rv != APR_SUCCESS) {
-    LOG_ERROR(PrintAPRStatus(rv));
+  multiple_io_base_ = std::move(multiple_io);
+  if (!multiple_io_base_->PollCreate(OPEN_MAX_POLL)) {
+    LOG_ERROR("Poll Create Failed!");
     return false;
   }
-
   return true;
 }
 
 void IOLoop::Uninit() {
-  if (pollset_) {
-    apr_pollset_destroy(pollset_);
-    pollset_ = NULL;
-  }
-
-  for (DelegatesType::const_iterator ite = delegates_.begin(); ite != delegates_.end(); ++ite) {
-    ClientData *data = ite->second;
-    if (data) {
-      delete data;
-    }
-  }
-
-  delegates_.clear();
-  mem_pool_ = NULL;
+  multiple_io_base_->PollDestroy();
 }
 
-void IOLoop::AddDelegate(apr_socket_t *sock, IOLoop::IOLoopDelegate *delegate, void *data) {
+void IOLoop::AddDelegate(socket_t sock, IOLoop::IOLoopDelegate *delegate, void *data) {
   PostTask(std::bind(&IOLoop::AddDelegateAsync, this, sock, delegate, data));
 }
 
-void IOLoop::RemoveDelegate(apr_socket_t *sock, IOLoopDelegate *) {
+void IOLoop::RemoveDelegate(socket_t sock, IOLoopDelegate *) {
   PostTask(std::bind(&IOLoop::RemoveDelegateAsync, this, sock));
 }
 
-void IOLoop::RemoveDelegateSync(apr_socket_t *sock) {
-  assert(apr_os_thread_equal(this->thread_id_, apr_os_thread_current()));
-  RemoveDelegateAsync(sock);
-}
-
 void IOLoop::Loop() {
-  apr_int32_t num = 0;
-  const apr_pollfd_t *ret_pfd = NULL;
-  apr_status_t rv = apr_pollset_poll(pollset_, apr_time_from_msec(50), &num, &ret_pfd);
-
-  if (rv == APR_SUCCESS) {
-    for (int i = 0; i < num; i++) {
-      ClientData *data = static_cast<ClientData *>(ret_pfd[i].client_data);
-      if (data) {
-        IOLoopDelegate *delegate = data->first;
-        if (delegate) {
-          delegate->OnData(ret_pfd[i].desc.s, data->second);
-        }
-      }
-    }
-  }
-
-  if (enable_wake_ && APR_STATUS_IS_EINTR(rv)) {
-    DelegatesType delegates = delegates_;
-    for (DelegatesType::const_iterator ite = delegates.begin(); ite != delegates.end(); ++ite) {
-      ClientData *data = ite->second;
-      if (data) {
-        IOLoopDelegate *delegate = data->first;
-        if (delegate) {
-          delegate->OnWake();
-        }
-      }
-    }
-  }
-
-  if (enable_timer_) {
-    TimePoint t = steady_clock::now();;
-    if (last_timeout_ == TimePoint() || t - last_timeout_ > std::chrono::milliseconds(50)) {
-      last_timeout_ = t;
-      // copy delegates_ in case delegate is removed in callback.
-      DelegatesType delegates = delegates_;
-      for (DelegatesType::const_iterator ite = delegates.begin(); ite != delegates.end(); ++ite) {
-        ClientData *data = ite->second;
-        if (data) {
-          IOLoopDelegate *delegate = data->first;
-          if (delegate) {
-            delegate->OnTimer(t);
-          }
-        }
-      }
-    }
-  }
+  multiple_io_base_->Poll(POLL_TIMEOUT);
 
   vector<IOLoopTask> tasks;
   {
@@ -135,24 +72,17 @@ void IOLoop::Loop() {
     tasks.swap(pending_tasks_);
   }
 
-  for (vector<IOLoopTask>::iterator ite = tasks.begin(); ite != tasks.end(); ++ite) {
-    IOLoopTask &task = *ite;
+  for (auto &task : tasks) {
     task();
   }
-
-  if (rv != APR_SUCCESS && !APR_STATUS_IS_TIMEUP(rv) && !APR_STATUS_IS_EINTR(rv)) {
-    LOG_ERROR(PrintAPRStatus(rv));
-  }
 }
 
-bool IOLoop::Wakeup() {
-  apr_status_t rv = apr_pollset_wakeup(pollset_);
-  if (rv != APR_SUCCESS) {
-    LOG_ERROR(PrintAPRStatus(rv));
-    return false;
+ bool IOLoop::Wakeup() {
+  if (multiple_io_base_) {
+    multiple_io_base_->PollWakeUp();
   }
   return true;
-}
+ }
 
 void IOLoop::PostTask(const IOLoopTask &task) {
   {
@@ -162,27 +92,39 @@ void IOLoop::PostTask(const IOLoopTask &task) {
   Wakeup();
 }
 
-void IOLoop::AddDelegateAsync(apr_socket_t *sock, IOLoop::IOLoopDelegate *delegate, void *data) {
-  ClientData *p = new ClientData(delegate, data);
-  apr_pollfd_t pfd = {mem_pool_, APR_POLL_SOCKET, APR_POLLIN, 0, {NULL}, p};
-  pfd.desc.s = sock;
-  apr_pollset_add(pollset_, &pfd);
-  delegates_[sock] = p;
+void IOLoop::AddDelegateAsync(socket_t sock, IOLoop::IOLoopDelegate *delegate, void *data) {
+  PollFd pollfd = {};
+  pollfd.fd = sock;
+  pollfd.event = READBLE_EVENT;
+  pollfd.event_callback = [=](FdEvent event) {
+    if (event & READBLE_EVENT) {
+      if (delegate) {
+        delegate->OnData(sock, data);
+      }
+    }
+  };
+  if (enable_timer_) {
+    pollfd.timer_callback = [=](TimePoint t) {
+      if (delegate) {
+        delegate->OnTimer(t);
+      }
+    };
+  }
+  if (enable_wake_) {
+    pollfd.wake_callback = [=]() {
+      if (delegate) {
+        delegate->OnWake();
+      }
+    };
+  }
+  multiple_io_base_->PollSetAdd(pollfd);
 }
 
-void IOLoop::RemoveDelegateAsync(apr_socket_t *sock) {
-  apr_pollfd_t pfd = {mem_pool_, APR_POLL_SOCKET, 0, 0, {NULL}, NULL};
-  pfd.desc.s = sock;
-  apr_pollset_remove(pollset_, &pfd);
-
-  DelegatesType::iterator ite = delegates_.find(sock);
-  if (ite != delegates_.end()) {
-    ClientData *p = ite->second;
-    if (p) {
-      delete p;
-    }
-    delegates_.erase(ite);
-  }
+void IOLoop::RemoveDelegateAsync(socket_t sock) {
+  PollFd pollfd = {};
+  pollfd.fd = sock;
+  pollfd.event = READBLE_EVENT;
+  multiple_io_base_->PollSetRemove(pollfd);
 }
 
 }  // namespace livox

@@ -24,6 +24,7 @@
 
 #include <time.h>
 #include <cmath>
+#include <cstring>
 #include "lvx_file.h"
 #include "third_party/rapidxml/rapidxml.hpp"
 #include "third_party/rapidxml/rapidxml_utils.hpp"

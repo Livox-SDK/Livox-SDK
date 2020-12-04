@@ -8,7 +8,7 @@ Livox SDK consists of Livox SDK communication protocol, Livox SDK core, Livox SD
 
 ## Prerequisites
 * Ubuntu 14.04/Ubuntu 16.04/Ubuntu 18.04, both x86 and ARM (Nvidia TX2)
-* Windows 7/10, Visual Studio 2015 Update3/2017
+* Windows 7/10, Visual Studio 2015 Update3/2017/2019
 * C++11 compiler
 
 # 2 Livox SDK Communication Protocol
@@ -35,7 +35,7 @@ The installation procedures in Ubuntu 18.04/16.04/14.04 LTS and Windows 7/10 are
 #### Dependencies
 Livox SDK requires [CMake 3.0.0+](https://cmake.org/) as dependencies. You can install these packages using apt:
 ```
-sudo apt install cmake pkg-config
+sudo apt install cmake
 ```
 #### Compile Livox SDK
 
@@ -43,22 +43,6 @@ In the Livox SDK directory, run the following commands to compile the project:
 ```
 git clone https://github.com/Livox-SDK/Livox-SDK.git
 cd Livox-SDK
-```
-Install apr library by:
-
-```
-sudo ./third_party/apr/apr_build.sh
-```
-
-or by:
-
-```
-sudo apt install libapr1-dev
-```
-
-then
-
-```
 cd build && cmake ..
 make
 sudo make install
@@ -67,24 +51,39 @@ sudo make install
 ### 4.1.2 Windows 7/10
 
 #### Dependencies
-Livox SDK supports Visual Studio 2015 Update3/2017 and requires install [CMake 3.0.0+](https://cmake.org/) as dependencies.  
+Livox SDK supports Visual Studio 2015 Update3/2017/2019 and requires install [CMake 3.0.0+](https://cmake.org/) as dependencies.  
 
 In the Livox SDK directory, run the following commands to create the Visual Studio solution file. 
 Generate the 32-bit project:
 
 ```
-cd Livox-SDK
-.\third_party\apr\apr_build.bat
-cd build && \
+cd Livox-SDK/build
+```
+For Viusal Studio 2015 Update3/2017:
+```
 cmake ..
+```
+For Viusal Studio 2019:
+```
+cmake .. -G "Visual Studio 16 2019" -A Win32
 ```
 Generate the 64-bit project:
 ```
-cd Livox-SDK
-.\third_party\apr\apr_build.bat amd64
-cd build && \
+cd Livox-SDK/build 
+```
+For Viusal Studio 2015 Update3:
+```
+cmake .. -G "Visual Studio 14 2015 Win64"
+```
+For Viusal Studio 2017:
+```
 cmake .. -G "Visual Studio 15 2017 Win64"
 ```
+For Viusal Studio 2019:
+```
+cmake .. -G "Visual Studio 16 2019" -A x64
+```
+
 #### Compile Livox SDK
 You can now compile the Livox SDK in Visual Studio.
 
@@ -94,10 +93,10 @@ The procedure of cross compile Livox-SDK in ARM-Linux are shown below.
 
 #### Dependencies
 
-Host machine requires install cmake and gcc. You can install these packages using apt:
+Host machine requires install cmake. You can install these packages using apt:
 
 ```
-sudo apt install cmake gcc
+sudo apt install cmake
 ```
 
 #### Cross Compile Toolchain
@@ -187,8 +186,8 @@ We provide the following program options for connecting the specific units and s
 ```
 Here is the example:
 ```
-./lidar_sample -c "00000000000002&00000000000003&00000000000004" -l
-./hub_sample -c "00000000000001" -l
+./lidar_sample_cc -c "00000000000002&00000000000003&00000000000004" -l
+./hub_sample_cc -c "00000000000001" -l
 ```
 
 #### 4.3.2 Edit Broadcast Code List

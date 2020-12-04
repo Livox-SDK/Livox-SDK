@@ -156,7 +156,7 @@ void LdsLidar::OnDeviceBroadcast(const BroadcastDeviceInfo *info) {
     }
   }
 
-  bool result = false;
+  livox_status result = kStatusFailure;
   uint8_t handle = 0;
   result = AddLidarToConnect(info->broadcast_code, &handle);
   if (result == kStatusSuccess && handle < kMaxLidarCount) {

@@ -31,8 +31,8 @@ namespace livox {
 
 class LidarCommandHandlerImpl : public CommandHandlerImpl {
  public:
-  LidarCommandHandlerImpl(CommandHandler *handler, apr_pool_t *pool, IOLoop *loop)
-      : CommandHandlerImpl(handler), mem_pool_(pool), loop_(loop) {}
+  LidarCommandHandlerImpl(CommandHandler *handler, std::weak_ptr<IOLoop> loop)
+      : CommandHandlerImpl(handler), loop_(loop) {}
 
   void Uninit();
 
@@ -45,9 +45,8 @@ class LidarCommandHandlerImpl : public CommandHandlerImpl {
     std::shared_ptr<CommandChannel> channel;
     DeviceInfo info;
   } DeviceItem;
-  apr_pool_t *mem_pool_;
   std::list<DeviceItem> devices_;
-  IOLoop *loop_;
+  std::weak_ptr<IOLoop> loop_;
 };
 
 }  // namespace livox

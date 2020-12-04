@@ -30,61 +30,53 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include "apr_general.h"
-#include "apr_network_io.h"
-#include "apr_poll.h"
-#include "apr_thread_proc.h"
+#include <algorithm>
 #include "command_callback.h"
 #include "noncopyable.h"
 #include "thread_base.h"
-#include "util.h"
+#include "multiple_io/multiple_io_base.h"
+#include "multiple_io/multiple_io_factory.h"
 
 namespace livox {
 
+#define OPEN_MAX_POLL 48
+#define POLL_TIMEOUT 50 //ms
+typedef int socket_t;
+
 class IOLoop : public noncopyable {
  public:
-  typedef std::chrono::steady_clock::time_point TimePoint;
+ typedef std::function<void(void)> IOLoopTask;
+
   class IOLoopDelegate {
    public:
-    virtual void OnData(apr_socket_t *, void *) {}
-    virtual void OnTimer(TimePoint) {}
+    virtual void OnData(socket_t, void *) {}
+    virtual void OnTimer(std::chrono::steady_clock::time_point) {}
     virtual void OnWake() {}
   };
 
-  typedef std::function<void(void)> IOLoopTask;
-
  public:
-  explicit IOLoop(apr_pool_t *mem_pool, bool enable_timer = true, bool enable_wake = true)
-      : pollset_(NULL), mem_pool_(mem_pool), last_timeout_(), enable_timer_(enable_timer), enable_wake_(enable_wake){};
+  explicit IOLoop(bool enable_timer = true, bool enable_wake = true)
+      : enable_timer_(enable_timer), enable_wake_(enable_wake){};
+
 
   bool Init();
   void Uninit();
-  void AddDelegate(apr_socket_t *sock, IOLoopDelegate *delegate, void *data = NULL);
-  void RemoveDelegate(apr_socket_t *sock, IOLoopDelegate *delegate);
-  void RemoveDelegateSync(apr_socket_t *sock);
+  void AddDelegate(socket_t sock, IOLoopDelegate *delegate, void *data = NULL);
+  void RemoveDelegate(socket_t sock, IOLoopDelegate *delegate);
   void Loop();
   bool Wakeup();
   void PostTask(const IOLoopTask &task);
-  void SetThreadId (apr_os_thread_t thread_id) { thread_id_ = thread_id; }
-  apr_os_thread_t GetThreadId () { return thread_id_; }
 
  private:
-  void AddDelegateAsync(apr_socket_t *sock, IOLoopDelegate *delegate, void *data);
-  void RemoveDelegateAsync(apr_socket_t *sock);
+  void AddDelegateAsync(socket_t sock, IOLoopDelegate *delegate, void *data);
+  void RemoveDelegateAsync(socket_t sock);
 
  private:
-  static const apr_uint32_t kMaxPollCount = 48;
-  typedef std::pair<IOLoopDelegate *, void *> ClientData;
-  typedef std::unordered_map<apr_socket_t *, ClientData *> DelegatesType;
-  DelegatesType delegates_;
-  apr_pollset_t *pollset_;
-  apr_pool_t *mem_pool_;
-  TimePoint last_timeout_;
   std::mutex mutex_;
   bool enable_timer_;
   bool enable_wake_;
   std::vector<IOLoopTask> pending_tasks_;
-  apr_os_thread_t thread_id_;
+  std::unique_ptr<MultipleIOBase> multiple_io_base_;
 };
 
 }  // namespace livox

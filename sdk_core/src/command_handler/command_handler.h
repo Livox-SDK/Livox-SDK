@@ -29,7 +29,6 @@
 #include <map>
 #include <mutex>
 #include "base/command_callback.h"
-#include "base/util.h"
 #include "command_channel.h"
 #include "device_discovery.h"
 #include "livox_sdk.h"
@@ -39,9 +38,9 @@ class CommandHandlerImpl;
 
 class CommandHandler : public noncopyable {
  public:
-  explicit CommandHandler() : mem_pool_(NULL), loop_(NULL) {}
+  explicit CommandHandler() {}
 
-  bool Init(IOLoop *loop);
+  bool Init(std::weak_ptr<IOLoop> loop);
   void Uninit();
 
   bool AddDevice(const DeviceInfo &info);
@@ -71,10 +70,9 @@ class CommandHandler : public noncopyable {
 
  private:
   std::multimap<uint16_t, Command> message_registers_;
-  apr_pool_t *mem_pool_;
   std::unique_ptr<CommandHandlerImpl> impl_;
   std::mutex mutex_;
-  IOLoop *loop_;
+  std::weak_ptr<IOLoop> loop_;
 };
 
 class CommandHandlerImpl : public CommandChannelDelegate {

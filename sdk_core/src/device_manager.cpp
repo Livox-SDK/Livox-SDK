@@ -49,11 +49,6 @@ inline bool IsLidar(uint8_t mode) {
 }
 
 bool DeviceManager::Init() {
-  apr_status_t rv = apr_pool_create(&mem_pool_, NULL);
-  if (rv != APR_SUCCESS) {
-    return false;
-  }
-
   return true;
 }
 
@@ -65,11 +60,6 @@ void DeviceManager::Uninit() {
   lock_guard<mutex> lock(mutex_);
   for (DeviceContainer::iterator ite = devices_.begin(); ite != devices_.end(); ++ite) {
     ite->clear();
-  }
-
-  if (mem_pool_) {
-    apr_pool_destroy(mem_pool_);
-    mem_pool_ = NULL;
   }
 }
 

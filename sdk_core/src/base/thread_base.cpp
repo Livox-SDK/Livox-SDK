@@ -23,49 +23,30 @@
 //
 
 #include "thread_base.h"
+#include <thread>
 
 namespace livox {
-static void *APR_THREAD_FUNC ClassThreadHelperFunc(apr_thread_t *thd, void *data) {
-  ThreadBase *caller = static_cast<ThreadBase *>(data);
-  if (caller == NULL) {
-    return NULL;
-  }
-  caller->ThreadFunc();
-  apr_thread_exit(thd, APR_SUCCESS);
-  return NULL;
-}
 
-ThreadBase::ThreadBase() : thread_(NULL), quit_(false), pool_(NULL) {}
+ThreadBase::ThreadBase() : quit_(false), is_thread_valid_(false) {}
 
 bool ThreadBase::Start() {
   quit_ = false;
-  apr_threadattr_t *thread_attr = NULL;
-  apr_status_t rv = APR_SUCCESS;
-  rv = apr_threadattr_create(&thread_attr, pool_);
-  if (rv != APR_SUCCESS) {
-    return false;
-  }
-  rv = apr_thread_create(&thread_, thread_attr, ClassThreadHelperFunc, this, pool_);
-  return rv == APR_SUCCESS;
+  thread_ = std::make_shared<std::thread>(&ThreadBase::ThreadFunc, this);
+  is_thread_valid_ = true;
+  return true;
 }
 
 void ThreadBase::Join() {
-  apr_status_t rv = APR_SUCCESS;
-  if (thread_) {
-    apr_thread_join(&rv, thread_);
-    thread_ = NULL;
+  if (is_thread_valid_) {
+    thread_->join();
   }
-}
+ }
 
 bool ThreadBase::Init() {
-  return apr_pool_create(&pool_, NULL) == APR_SUCCESS;
+  return true;
 }
 
 void ThreadBase::Uninit() {
-  if (pool_) {
-    apr_pool_destroy(pool_);
-    pool_ = NULL;
-  }
 }
 
 }  // namespace livox

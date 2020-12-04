@@ -262,7 +262,7 @@ livox_status HubStopSampling(CommonCommandCallback cb, void *client_data) {
   return DeviceSampleControl(kHubDefaultHandle, false, cb, client_data);
 }
 
-livox_status HubGetLidarHandle(uint8_t slot, uint8_t id) {
+uint8_t HubGetLidarHandle(uint8_t slot, uint8_t id) {
   return (slot - 1) * 3 + id - 1;
 }
 

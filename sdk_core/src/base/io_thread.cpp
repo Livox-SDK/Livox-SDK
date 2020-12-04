@@ -23,7 +23,6 @@
 //
 
 #include "io_thread.h"
-#include "apr_pools.h"
 
 namespace livox {
 
@@ -32,11 +31,9 @@ void IOThread::Join() {
 }
 
 void IOThread::ThreadFunc() {
-  if (loop_ == NULL) {
+  if (!loop_) {
     return;
   }
-  apr_os_thread_t thread_id = apr_os_thread_current();
-  loop_->SetThreadId(thread_id);
 
   while (!IsQuit()) {
     loop_->Loop();
@@ -48,14 +45,13 @@ bool IOThread::Init(bool enable_timer, bool enable_wake) {
     return false;
   }
 
-  loop_.reset(new IOLoop(pool_, enable_timer, enable_wake));
+  loop_ = std::make_shared<IOLoop>(enable_timer, enable_wake);
   return loop_->Init();
 }
 
 void IOThread::Uninit() {
   if (loop_) {
     loop_->Uninit();
-    loop_.reset(NULL);
   }
   ThreadBase::Uninit();
 }

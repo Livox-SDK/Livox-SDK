@@ -90,9 +90,9 @@ bool CommandHandler::AddDevice(const DeviceInfo &info) {
   if (impl_ == NULL) {
     DeviceMode mode = static_cast<DeviceMode>(device_manager().device_mode());
     if (mode == kDeviceModeHub) {
-      impl_.reset(new HubCommandHandlerImpl(this, mem_pool_, loop_));
+      impl_.reset(new HubCommandHandlerImpl(this, loop_));
     } else if (mode == kDeviceModeLidar) {
-      impl_.reset(new LidarCommandHandlerImpl(this, mem_pool_, loop_));
+      impl_.reset(new LidarCommandHandlerImpl(this, loop_));
     }
   }
   if (impl_ == NULL) {
@@ -102,25 +102,14 @@ bool CommandHandler::AddDevice(const DeviceInfo &info) {
   return impl_->AddDevice(info);
 }
 
-bool CommandHandler::Init(IOLoop *loop) {
-  apr_status_t rv = apr_pool_create(&mem_pool_, NULL);
-  if (rv != APR_SUCCESS) {
-    return false;
-  }
-
+bool CommandHandler::Init(std::weak_ptr<IOLoop> loop) {
   loop_ = loop;
   return true;
 }
 
 void CommandHandler::Uninit() {
-  loop_ = NULL;
   if (impl_) {
     impl_.reset(NULL);
-  }
-
-  if (mem_pool_) {
-    apr_pool_destroy(mem_pool_);
-    mem_pool_ = NULL;
   }
 }
 

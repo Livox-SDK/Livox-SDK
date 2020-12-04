@@ -23,11 +23,14 @@
 //
 
 #include "livox_sdk.h"
-#include "apr_general.h"
 #include "command_handler/command_handler.h"
 #include "data_handler/data_handler.h"
 #include "base/logging.h"
 #include "device_manager.h"
+#ifdef WIN32
+#include<winsock2.h>
+#endif // WIN32
+
 using namespace livox;
 IOThread *g_thread = NULL;
 static bool is_initialized = false;
@@ -44,15 +47,17 @@ bool Init() {
   if (is_initialized) {
     return false;
   }
+#ifdef WIN32
+  WORD sockVersion = MAKEWORD(2, 0);
+  WSADATA wsdata;
+  if (WSAStartup(sockVersion, &wsdata) != 0) {
+    return false;
+  }
+#endif // WIN32
 
   bool result = false;
   do {
     InitLogger();
-
-    if (apr_initialize() != APR_SUCCESS) {
-      result = false;
-      break;
-    }
 
     g_thread = new IOThread();
     g_thread->Init();
@@ -79,10 +84,6 @@ bool Init() {
     result = true;
   } while (0);
 
-  if (result == false) {
-    apr_terminate();
-  }
-
   is_initialized = result;
   return result;
 }
@@ -91,24 +92,26 @@ void Uninit() {
   if (!is_initialized) {
     return;
   }
+#ifdef WIN32
+    WSACleanup();
+#endif // WIN32
   if (g_thread) {
     g_thread->Quit();
     g_thread->Join();
   }
-
-  device_discovery().Uninit();
-  command_handler().Uninit();
-  data_handler().Uninit();
-  device_manager().Uninit();
 
   if (g_thread) {
     g_thread->Uninit();
     delete g_thread;
     g_thread = NULL;
   }
+
+  device_discovery().Uninit();
+  command_handler().Uninit();
+  data_handler().Uninit();
+  device_manager().Uninit();
   
   UninitLogger();
-  apr_terminate();
   is_initialized = false;
 }
 

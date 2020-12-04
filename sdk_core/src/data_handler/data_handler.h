@@ -29,7 +29,6 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include "apr_pools.h"
 #include "base/io_thread.h"
 #include "device_manager.h"
 
@@ -41,7 +40,7 @@ class DataHandler : public noncopyable {
   typedef std::function<void(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data)> DataCallback;
 
  public:
-  DataHandler() : mem_pool_(NULL) {}
+  DataHandler() {}
 
   bool Init();
   void Uninit();
@@ -53,7 +52,6 @@ class DataHandler : public noncopyable {
   void OnDataCallback(uint8_t handle, void *data, uint16_t size);
 
  private:
-  apr_pool_t *mem_pool_;
   std::array<DataCallback, kMaxConnectedDeviceNum> callbacks_;
   std::array<void *, kMaxConnectedDeviceNum> client_data_;
   std::unique_ptr<DataHandlerImpl> impl_;

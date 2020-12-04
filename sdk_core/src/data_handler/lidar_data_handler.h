@@ -34,24 +34,23 @@ namespace livox {
 
 class LidarDataHandlerImpl : public DataHandlerImpl {
  public:
-  LidarDataHandlerImpl(DataHandler *handler, apr_pool_t *mem_pool) : DataHandlerImpl(handler), mem_pool_(mem_pool) {}
+  LidarDataHandlerImpl(DataHandler *handler) : DataHandlerImpl(handler) {}
   ~LidarDataHandlerImpl() { Uninit(); }
   bool Init();
   void Uninit();
   bool AddDevice(const DeviceInfo &info);
   void RemoveDevice(uint8_t handle);
-  void OnData(apr_socket_t *sock, void *client_data);
+  void OnData(socket_t sock, void *client_data);
 
  private:
   typedef struct {
-    apr_socket_t *sock;
+    socket_t sock;
     std::shared_ptr<IOThread> thread;
     uint16_t handle;
   } DeviceItem;
   std::list<DeviceItem> devices_;
 
   std::array<std::unique_ptr<char[]>, kMaxConnectedDeviceNum> data_buffers_;
-  apr_pool_t *mem_pool_;
   std::mutex mutex_;
 };
 

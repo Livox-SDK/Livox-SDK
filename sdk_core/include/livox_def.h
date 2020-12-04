@@ -140,7 +140,7 @@ typedef enum {
 #pragma pack(1)
 
 #define LIVOX_SDK_MAJOR_VERSION       2
-#define LIVOX_SDK_MINOR_VERSION       2
+#define LIVOX_SDK_MINOR_VERSION       3
 #define LIVOX_SDK_PATCH_VERSION       0
 
 #define kBroadcastCodeSize 16

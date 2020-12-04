@@ -26,10 +26,11 @@
 #include <functional>
 #include <atomic>
 #include "base/logging.h"
-#include "base/network_util.h"
+#include "base/network/network_util.h"
 #include "command_impl.h"
 #include "device_manager.h"
 #include "livox_def.h"
+#include <stdio.h>
 
 using std::bind;
 using std::list;
@@ -41,49 +42,46 @@ using std::chrono::steady_clock;
 
 namespace livox {
 
-CommandChannel::CommandChannel(apr_port_t port,
+CommandChannel::CommandChannel(uint16_t port,
                                uint8_t handle,
                                const string &remote_ip,
-                               CommandChannelDelegate *cb,
-                               apr_pool_t *pool)
+                               CommandChannelDelegate *cb)
     : handle_(handle),
       port_(port),
-      sock_(NULL),
-      mem_pool_(pool),
-      loop_(NULL),
+      loop_(),
       callback_(cb),
       comm_port_(new CommPort),
-      heartbeat_time_(),
       remote_ip_(remote_ip),
+      heartbeat_time_(),
       last_heartbeat_() {}
 
-bool CommandChannel::Bind(IOLoop *loop) {
-  if (loop == NULL) {
+
+bool CommandChannel::Bind(std::weak_ptr<IOLoop> loop) {
+  if (loop.expired()) {
     return false;
   }
   loop_ = loop;
-  sock_ = util::CreateBindSocket(port_, mem_pool_);
-  if (sock_ == NULL) {
+  sock_ = util::CreateSocket(port_);
+  if (sock_ == -1) {
     return false;
   }
 
-  loop_->AddDelegate(sock_, this);
+  loop_.lock()->AddDelegate(sock_, this);
   last_heartbeat_ = steady_clock::now();
   return true;
 }
 
-void CommandChannel::OnData(apr_socket_t *, void *) {
-  apr_sockaddr_t addr;
+void CommandChannel::OnData(socket_t , void *) {
+  struct sockaddr addr;
+  int addrlen = sizeof(addr);
   uint32_t buf_size = 0;
   uint8_t *cache_buf = comm_port_->FetchCacheFreeSpace(&buf_size);
-  apr_size_t size = buf_size;
-  apr_status_t rv = apr_socket_recvfrom(&addr, sock_, 0, reinterpret_cast<char *>(cache_buf), &size);
-  comm_port_->UpdateCacheWrIdx(size);
-  if (rv != APR_SUCCESS) {
-    LOG_ERROR(PrintAPRStatus(rv));
+  int size = buf_size;
+  size = util::RecvFrom(sock_, reinterpret_cast<char *>(cache_buf), buf_size, 0, &addr, &addrlen);
+  if (size <= 0) {
     return;
   }
-
+  comm_port_->UpdateCacheWrIdx(size);
   CommPacket packet;
   memset(&packet, 0, sizeof(packet));
 
@@ -115,8 +113,14 @@ void CommandChannel::OnData(apr_socket_t *, void *) {
 
 void CommandChannel::SendAsync(const Command &command) {
   Command cmd = DeepCopy(command);
-  if (loop_) {
-    loop_->PostTask(bind(&CommandChannel::Send, this, cmd));
+  if (!loop_.expired()) {
+    auto w_ptr = WeakProtector(protector_);
+    loop_.lock()->PostTask([this, w_ptr, cmd](){
+      if(w_ptr.expired()) {
+        return;
+      }
+      Send(cmd);
+    });
   }
 }
 
@@ -134,7 +138,7 @@ void CommandChannel::OnTimer(TimePoint now) {
   }
 
   for (list<Command>::iterator ite = timeout_commands.begin(); ite != timeout_commands.end(); ++ite) {
-    LOG_WARN("Command Timeout: Set {}, Id {}, Seq {}",
+    LOG_WARN("Command Timeout: Set {}, Id {}, Seq {}", 
         (uint16_t)ite->packet.cmd_set, ite->packet.cmd_code, ite->packet.seq_num);
     if (callback_) {
       ite->packet.packet_type = kCommandTypeAck;
@@ -150,16 +154,12 @@ void CommandChannel::OnTimer(TimePoint now) {
 }
 
 void CommandChannel::Uninit() {
-  if (sock_) {
-    apr_os_thread_t thread_id = apr_os_thread_current();
-    if (apr_os_thread_equal(loop_->GetThreadId(), thread_id)) {
-      loop_->RemoveDelegateSync(sock_);
-    } else {
-      loop_->RemoveDelegate(sock_, this);
+  if (sock_ != -1) {
+    if (!loop_.expired()) {
+      loop_.lock()->RemoveDelegate(sock_, this);
     }
-    loop_ = NULL;
-    apr_socket_close(sock_);
-    sock_ = NULL;
+    util::CloseSock(sock_);
+    sock_ = -1;
   }
   callback_ = NULL;
   if (comm_port_) {
@@ -190,22 +190,22 @@ void CommandChannel::HeartBeat(TimePoint t) {
 }
 
 void CommandChannel::SendInternal(const Command &command) {
-  apr_pool_t *subpool = NULL;
-  apr_pool_create(&subpool, mem_pool_);
-  uint8_t *buf = (uint8_t *)apr_palloc(subpool, kMaxCommandBufferSize);
-  uint32_t size = 0;
-  comm_port_->Pack(buf, kMaxCommandBufferSize, &size, command.packet);
-  apr_size_t apr_size = size;
-  apr_status_t rv = APR_SUCCESS;
-  apr_sockaddr_t *sa = NULL;
-  rv = apr_sockaddr_info_get(&sa, remote_ip_.c_str(), APR_INET, 65000, 0, subpool);
-  if (rv == APR_SUCCESS) {
-    rv = apr_socket_sendto(sock_, sa, 0, (const char *)buf, &apr_size);
+  std::vector<uint8_t> buf(kMaxCommandBufferSize + 1);
+  int size = 0;
+  comm_port_->Pack(buf.data(), kMaxCommandBufferSize, (uint32_t *)&size, command.packet);
+
+  struct sockaddr_in servaddr;
+  servaddr.sin_family = AF_INET;
+  servaddr.sin_port = htons(65000);
+  servaddr.sin_addr.s_addr = inet_addr(remote_ip_.c_str());
+
+  int byte_send = sendto(sock_, (const char*)buf.data(), size, 0, (const struct sockaddr *) &servaddr,
+            sizeof(servaddr));
+  if (byte_send < 0) {
+    if (command.cb) {
+      (*command.cb)(kStatusSendFailed, handle_, NULL);
+    }
   }
-  if (rv != APR_SUCCESS) {
-    (*command.cb)(kStatusSendFailed, handle_, NULL);
-  }
-  apr_pool_destroy(subpool);
 }
 
 uint16_t CommandChannel::GenerateSeq() {

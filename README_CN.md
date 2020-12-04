@@ -7,7 +7,7 @@ Livox SDK 包括了 Livox SDK 通信协议，Livox SDK 内核，Livox SDK 应用
 
 ## 前置依赖
 * Ubuntu 14.04/Ubuntu 16.04/Ubuntu 18.04, x86 和 ARM (Nvidia TX2)
-* Windows 7/10, Visual Studio 2015 Update3/2017
+* Windows 7/10, Visual Studio 2015 Update3/2017/2019
 * C++11 编译器
 
 # 2 Livox SDK 通信协议
@@ -34,7 +34,7 @@ Livox SDK 应用接口提供了一系列 C 风格的接口，可以很方便地�
 #### 依赖
 Livox SDK 依赖于 cmake 。你可以通过 apt 工具安装这些依赖包 :
 ```
-sudo apt install cmake pkg-config
+sudo apt install cmake
 ```
 #### 编译 Livox SDK
 
@@ -42,24 +42,6 @@ sudo apt install cmake pkg-config
 ```
 git clone https://github.com/Livox-SDK/Livox-SDK.git
 cd Livox-SDK
-
-
-```
-安装 apr 库通过：
-
-```
-sudo ./third_party/apr/apr_build.sh
-```
-
-或者通过：
-
-```
-sudo apt install libapr1-dev
-```
-
-然后：
-
-```
 cd build && cmake ..
 make
 sudo make install
@@ -68,22 +50,39 @@ sudo make install
 ### 4.1.2 Windows 7/10
 
 #### 依赖
-Livox SDK 支持 Visual Studio 2015 Update3/2017，需要安装 [CMake 3.0.0+](https://cmake.org/) 依赖。
+Livox SDK 支持 Visual Studio 2015 Update3/2017/2019，需要安装 [CMake 3.0.0+](https://cmake.org/) 依赖。
 
 在 Livox SDK 目录中，执行以下指令生成 Visual Studio solution 文件。
 生成 32-bit 工程：
 
 ```
-cd Livox-SDK
-.\third_party\apr\apr_build.bat
-cd build && cmake ..
+cd Livox-SDK/build
+```
+
+对于 Viusal Studio 2015 Update3/2017:
+
+```
+cmake ..
+```
+对于 Viusal Studio 2019:
+```
+cmake .. -G "Visual Studio 16 2019" -A Win32
 ```
 生成 64-bit 工程：
 ```
-cd Livox-SDK
-.\third_party\apr\apr_build.bat amd64
-cd build && \
+cd Livox-SDK/build
+```
+对于 Viusal Studio 2015 Update3:
+```
+cmake .. -G "Visual Studio 14 2015 Win64"
+```
+对于 Viusal Studio 2017:
+```
 cmake .. -G "Visual Studio 15 2017 Win64"
+```
+对于 Viusal Studio 2019:
+```
+cmake .. -G "Visual Studio 16 2019" -A x64
 ```
 #### 编译 Livox SDK
 然后就可以在 Visual Studio 中编译 Livox SDK 。
@@ -94,10 +93,10 @@ cmake .. -G "Visual Studio 15 2017 Win64"
 
 #### 依赖
 
-交叉编译需要在主机安装 cmake 和 gcc。 你可以通过 apt 工具安装这些依赖包 :
+交叉编译需要在主机安装 cmake。 你可以通过 apt 工具安装这些依赖包 :
 
 ```
-sudo apt install cmake gcc
+sudo apt install cmake
 ```
 
 #### 交叉编译工具链
@@ -188,8 +187,8 @@ cd sample/hub && ./hub_sample
 ```
 这里是示例 :
 ```
-./lidar_sample -c "00000000000002&00000000000003&00000000000004" -l
-./hub_sample -c "00000000000001" -l
+./lidar_sample_cc -c "00000000000002&00000000000003&00000000000004" -l
+./hub_sample_cc -c "00000000000001" -l
 ```
 
 #### 4.3.2 编辑广播码

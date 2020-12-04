@@ -32,8 +32,8 @@
 namespace livox {
 class HubDataHandlerImpl : public DataHandlerImpl {
  public:
-  HubDataHandlerImpl(DataHandler *handler, apr_pool_t *mem_pool)
-      : DataHandlerImpl(handler), mem_pool_(mem_pool), thread_(new IOThread()), sock_(NULL), is_valid_(false) {}
+  HubDataHandlerImpl(DataHandler *handler)
+      : DataHandlerImpl(handler), thread_(new IOThread()), is_valid_(false) {}
 
   ~HubDataHandlerImpl() { Uninit(); }
   bool Init();
@@ -41,12 +41,11 @@ class HubDataHandlerImpl : public DataHandlerImpl {
 
   bool AddDevice(const DeviceInfo &info);
   void RemoveDevice(uint8_t t);
-  void OnData(apr_socket_t *sock, void *client_data);
+  void OnData(socket_t sock, void *client_data);
 
  private:
-  apr_pool_t *mem_pool_;
   std::unique_ptr<IOThread> thread_;
-  apr_socket_t *sock_;
+  socket_t sock_ = -1;
   DeviceInfo hub_info_;
   bool is_valid_;
   std::vector<char> buf_;

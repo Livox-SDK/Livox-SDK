@@ -23,7 +23,7 @@
 //
 
 #include "hub_command_handler.h"
-#include "base/network_util.h"
+#include "base/network/network_util.h"
 
 namespace livox {
 
@@ -41,7 +41,7 @@ bool HubCommandHandlerImpl::AddDevice(const DeviceInfo &info) {
   is_valid_ = true;
   hub_info_ = info;
 
-  channel_.reset(new CommandChannel(info.cmd_port, info.handle, info.ip, this, mem_pool_));
+  channel_.reset(new CommandChannel(info.cmd_port, info.handle, info.ip, this));
   channel_->Bind(loop_);
   return true;
 }

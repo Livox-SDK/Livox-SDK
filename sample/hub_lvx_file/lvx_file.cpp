@@ -24,6 +24,7 @@
 
 #include <time.h>
 #include <cmath>
+#include <cstring>
 #include "lvx_file.h"
 
 #define WRITE_BUFFER_LEN 1024 * 1024

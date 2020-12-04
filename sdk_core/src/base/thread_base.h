@@ -24,10 +24,8 @@
 
 #ifndef LIVOX_THREAD_BASE_H_
 #define LIVOX_THREAD_BASE_H_
-#include <apr_general.h>
-#include <apr_thread_proc.h>
-#include <apr_portable.h>
 #include <atomic>
+#include <thread>
 #include "noncopyable.h"
 
 namespace livox {
@@ -45,9 +43,11 @@ class ThreadBase : public noncopyable {
   bool IsQuit() { return quit_; }
 
  protected:
-  apr_thread_t *thread_;
+  std::shared_ptr<std::thread> thread_;
   std::atomic_bool quit_;
-  apr_pool_t *pool_;
+  
+ private:
+  std::atomic_bool is_thread_valid_;
 };
 
 }  // namespace livox
