@@ -643,7 +643,7 @@ typedef struct {
   uint8_t month;
   uint8_t day;
   uint8_t hour;
-  uint32_t mircrosecond;
+  uint32_t microsecond;
 } LidarSetUtcSyncTimeRequest;
 
 /**
