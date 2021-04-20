@@ -83,22 +83,27 @@ bool MultipleIOKqueue::PollSetAdd(PollFd poll_fd) {
 
 bool MultipleIOKqueue::PollSetRemove(PollFd poll_fd) {
   int fd = poll_fd.fd;
+  bool result = true;
   if (descriptors_.find(fd) != descriptors_.end()) {
-    if (descriptors_[fd].event & READBLE_EVENT) {
-      EV_SET(&kevent_, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-      if (kevent(kqueue_fd_, &kevent_, 1, nullptr, 0, nullptr) == -1) {
-        return false;
+    do {
+      if (descriptors_[fd].event & READBLE_EVENT) {
+        EV_SET(&kevent_, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+        if (kevent(kqueue_fd_, &kevent_, 1, nullptr, 0, nullptr) == -1) {
+          result = false;
+          break;
+        }
       }
-    }
-    if (descriptors_[fd].event & WRITABLE_EVENT) {
-      EV_SET(&kevent_, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-      if (kevent(kqueue_fd_, &kevent_, 1, nullptr, 0, nullptr) == -1) {
-        return false;
+      if (descriptors_[fd].event & WRITABLE_EVENT) {
+        EV_SET(&kevent_, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+        if (kevent(kqueue_fd_, &kevent_, 1, nullptr, 0, nullptr) == -1) {
+          result = false;
+          break;
+        }
       }
-    }
+    } while(0);
     descriptors_.erase(fd);
   }
-  return true;
+  return result;
 }
 
 void MultipleIOKqueue::Poll(int time_out) {
