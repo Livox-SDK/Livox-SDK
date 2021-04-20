@@ -160,6 +160,18 @@ void DeviceManager::HubLidarInfomationCallback(livox_status status, uint8_t, Hub
     if (connected_cb_) {
       connected_cb_(&(devices_[kHubDefaultHandle].info), kEventHubConnectionChange);
     }
+  } else if (status == kStatusTimeout) {
+    LOG_WARN("Query lidars information Timeout.");
+    if (IsDeviceConnected(kHubDefaultHandle)) {
+      LOG_INFO("Retry to query lidars information.");
+      command_handler().SendCommand(kHubDefaultHandle,
+                                    kCommandSetHub,
+                                    kCommandIDHubQueryLidarInformation,
+                                    NULL,
+                                    0,
+                                    MakeCommandCallback<DeviceManager, HubQueryLidarInformationResponse>(
+                                        this, &DeviceManager::HubLidarInfomationCallback));
+    }
   } else {
     LOG_ERROR("Failed to query lidars information connected to hub.");
   }
@@ -177,6 +189,18 @@ void DeviceManager::QueryDeviceInformationCallback(livox_status status, uint8_t 
     }
     if (connected_cb_) {
       connected_cb_(&devices_[handle].info, kEventConnect);
+    }
+  } else if (status == kStatusTimeout) {
+    LOG_WARN("Query lidar information Timeout.");
+    if (IsDeviceConnected(handle)) {
+      LOG_INFO("Retry to query lidar information.");
+      command_handler().SendCommand(handle,
+                                    kCommandSetGeneral,
+                                    kCommandIDGeneralDeviceInfo,
+                                    NULL,
+                                    0,
+                                    MakeCommandCallback<DeviceManager, DeviceInformationResponse>(
+                                        this, &DeviceManager::QueryDeviceInformationCallback));
     }
   } else {
     LOG_ERROR("Failed to query lidar information.");
