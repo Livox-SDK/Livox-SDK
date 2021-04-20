@@ -146,11 +146,7 @@ void CommandChannel::OnTimer(TimePoint now) {
     }
   }
 
-  if (now - last_heartbeat_ > std::chrono::seconds(3)) {
-    DeviceDisconnect(handle_);
-  } else {
-    HeartBeat(now);
-  }
+  HeartBeat(now);
 }
 
 void CommandChannel::Uninit() {

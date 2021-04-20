@@ -71,7 +71,9 @@ class DeviceDiscovery : public noncopyable, IOLoop::IOLoopDelegate {
   void OnTimer(TimePoint now);
 
  private:
+  void ReConnectDevice(const DeviceInfo& lidar_info, struct sockaddr *addr);
   void OnBroadcast(const CommPacket &packet, struct sockaddr *addr);
+  void OnHandshakeCallback(livox_status status, uint8_t handle, uint8_t);
 
  private:
   /** broadcast listening port number. */

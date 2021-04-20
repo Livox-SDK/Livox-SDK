@@ -30,6 +30,7 @@
 #include "base/logging.h"
 #include "base/network/network_util.h"
 #include "command_handler/command_impl.h"
+#include "command_handler/command_handler.h"
 #include "device_manager.h"
 #include "livox_def.h"
 
@@ -139,6 +140,52 @@ void DeviceDiscovery::Uninit() {
   }
 }
 
+
+void DeviceDiscovery::ReConnectDevice(const DeviceInfo& lidar_info, struct sockaddr *addr) {
+  HandshakeRequest handshake_req;
+  uint32_t local_ip = 0;
+  if (util::FindLocalIp(*(struct sockaddr_in*)addr, local_ip) == false) {
+    LOG_INFO("LocalIp and DeviceIp are not in same subnet");
+    LOG_INFO("LocalIP: {}", inet_ntoa(*(struct in_addr *)&local_ip));
+    LOG_INFO("DeviceIP: {}", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
+    return;
+  }
+  LOG_INFO("ReConnect Device");
+  LOG_INFO("LocalIP: {}", inet_ntoa(*(struct in_addr *)&local_ip));
+  LOG_INFO("DeviceIP: {}", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
+  LOG_INFO("Command Port: {}", lidar_info.cmd_port);
+  LOG_INFO("Data Port: {}", lidar_info.data_port);
+  handshake_req.ip_addr = local_ip;
+  handshake_req.cmd_port = lidar_info.cmd_port;
+  handshake_req.data_port = lidar_info.data_port;
+
+  command_handler().SendCommand(lidar_info.handle,
+                                kCommandSetGeneral,
+                                kCommandIDGeneralHandshake,
+                                (uint8_t*)&handshake_req,
+                                sizeof(HandshakeRequest),
+                                MakeCommandCallback<DeviceDiscovery, uint8_t>(
+                                    this, &DeviceDiscovery::OnHandshakeCallback));
+}
+
+void DeviceDiscovery::OnHandshakeCallback(livox_status status, uint8_t handle, uint8_t) {
+  if (status != kStatusSuccess) {
+    LOG_WARN("On HandshakeCallback status: {}", status);
+    return;
+  }
+  DeviceInfo lidar_info;
+  bool found = device_manager().FindDevice(handle, lidar_info);
+  if (!found) {
+    return;
+  }
+
+  if (device_manager().device_mode() == kDeviceModeHub) {
+    device_manager().UpdateDevices(lidar_info, kEventHubConnectionChange);
+  } else {
+    device_manager().UpdateDevices(lidar_info, kEventConnect);
+  }
+}
+
 void DeviceDiscovery::OnBroadcast(const CommPacket &packet,  struct sockaddr *addr) {
   if (packet.data == NULL) {
     return;
@@ -161,9 +208,11 @@ void DeviceDiscovery::OnBroadcast(const CommPacket &packet,  struct sockaddr *ad
 
   if (!found) {
     LOG_INFO("Broadcast code : {} not add to connect", broadcast_code);
+    return;
   }
 
-  if (!found || device_manager().IsDeviceConnected(lidar_info.handle)) {
+  if (device_manager().IsDeviceConnected(lidar_info.handle)) {
+    ReConnectDevice(lidar_info, addr);
     return;
   }
 
