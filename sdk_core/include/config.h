@@ -41,7 +41,7 @@
     #define HAVE_KQUEUE 1
 #else
     #include <sys/poll.h>
-    #define HAVE POLL 1
+    #define HAVE_POLL 1
 #endif
 
 #endif  // CONFIG_H_

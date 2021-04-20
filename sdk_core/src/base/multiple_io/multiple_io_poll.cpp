@@ -93,10 +93,10 @@ void MultipleIOPoll:: Poll(int time_out) {
     for (int i = 0; i < pollset_num_; i++) {
       FdEvent fd_event = NONE_EVENT;
       if (pollset_[i].revents & POLLIN) {
-        fd_event = | READBLE_EVENT;
+        fd_event |= READBLE_EVENT;
       }
       if (pollset_[i].revents & POLLOUT) {
-        fd_event = | WRITABLE_EVENT;
+        fd_event |= WRITABLE_EVENT;
       }
       int fd = pollset_[i].fd;
       if (descriptors_.find(fd) != descriptors_.end()) {
