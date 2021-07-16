@@ -209,7 +209,7 @@ bool ParseRmcTime(const char* rmc, uint16_t rmc_len, LidarSetUtcSyncTimeRequest*
   }
 
   utc_time_req->hour = hour;
-  utc_time_req->mircrosecond = (minute * 60 * 1000 + second * 1000) * 1000;
+  utc_time_req->microsecond = (minute * 60 * 1000 + second * 1000) * 1000;
   return true;
 }
 
