@@ -67,30 +67,43 @@ bool WakeUpPipe::PipeDestroy() {
 }
 
 bool WakeUpPipe::PipeCreate() {
+  bool status = false;
   //in filedes[0]
   //out filedes[1]
-  int filedes[2];
+  int filedes[2]= {};
   if (pipe(filedes) == -1) {
     return false;
   }
+  do {
+    int flags = 0;
+    if ((flags = fcntl(filedes[0], F_GETFD)) == -1) {
+      break;
+    }
 
-  int flags = 0;
-  if ((flags = fcntl(filedes[0], F_GETFL|O_NONBLOCK)) == -1) {
-    return false;
-  }
+    flags |= FD_CLOEXEC;
+    if (fcntl(filedes[0], F_SETFD, flags) == -1) {
+      break;
+    }
 
-  flags |= FD_CLOEXEC;
-  if (fcntl(filedes[0], F_SETFL, flags) == -1) {
-    return false;
-  }
+    flags = 0;
+    if ((flags = fcntl(filedes[1], F_GETFD)) == -1) {
+      break;
+    }
 
-  flags = 0;
-  if ((flags = fcntl(filedes[1], F_GETFD)) == -1) {
-    return false;
-  }
+    flags |= FD_CLOEXEC;
+    if (fcntl(filedes[1], F_SETFD, flags) == -1) {
+      break;
+    }
+    status = true;
+  } while(0);
 
-  flags |= FD_CLOEXEC;
-  if (fcntl(filedes[1], F_SETFD, flags) == -1) {
+  if (!status) {
+    if (filedes[0] > 0) {
+      close(filedes[0]);
+    }
+    if (filedes[1] > 0) {
+      close(filedes[1]);
+    }
     return false;
   }
   pipe_out_ = filedes[0];
