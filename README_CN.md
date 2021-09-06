@@ -234,5 +234,5 @@ char broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize] = {
 # 5 支持
 
 你可以通过以下方式获取 Livox 的技术支持 :
-* 发送邮件到 dev@livoxtech.com 描述清楚问题和使用场景
+* 发送邮件到 cs@livoxtech.com 描述清楚问题和使用场景
 * Github Issues
