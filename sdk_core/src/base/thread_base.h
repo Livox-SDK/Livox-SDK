@@ -26,6 +26,7 @@
 #define LIVOX_THREAD_BASE_H_
 #include <atomic>
 #include <thread>
+#include <memory>
 #include "noncopyable.h"
 
 namespace livox {
