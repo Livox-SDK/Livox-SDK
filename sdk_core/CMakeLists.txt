@@ -4,6 +4,10 @@ set(SDK_LIBRARY ${PROJECT_NAME}_static)
 add_library(${SDK_LIBRARY} STATIC "")
 add_library(livox_sdk::livox_sdk ALIAS ${SDK_LIBRARY})
 
+set_target_properties(${SDK_LIBRARY} PROPERTIES
+        EXPORT_NAME livox_sdk
+        OUTPUT_NAME livox_sdk)
+
 set(LIVOX_SDK_MAJOR_VERSION "2")
 set(LIVOX_SDK_MINOR_VERSION "3")
 set(LIVOX_SDK_PATCH_VERSION "0")
@@ -85,8 +89,4 @@ target_sources(${SDK_LIBRARY}
         src/base/wake_up/wake_up_pipe.h
         src/base/wake_up/${PLATFORM}/wake_up_pipe.cpp)
 
-
-install(TARGETS ${SDK_LIBRARY}
-        PUBLIC_HEADER DESTINATION include
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib)
+include(../cmake/install-rules.cmake)
