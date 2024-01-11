@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 set(SDK_LIBRARY ${PROJECT_NAME}_static)
 add_library(${SDK_LIBRARY} STATIC "")
+add_library(livox_sdk::livox_sdk ALIAS ${SDK_LIBRARY})
 
 set(LIVOX_SDK_MAJOR_VERSION "2")
 set(LIVOX_SDK_MINOR_VERSION "3")
