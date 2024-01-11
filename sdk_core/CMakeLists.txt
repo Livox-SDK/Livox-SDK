@@ -30,10 +30,13 @@ else(WIN32)
   set(PLATFORM unix)
 endif (WIN32)
 
-target_compile_options(${SDK_LIBRARY}
+# Warnings are only for developers
+if(shared_DEVELOPER_MODE)
+  target_compile_options(${SDK_LIBRARY}
         PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall -Werror -Wno-c++11-long-long>
         PRIVATE $<$<CXX_COMPILER_ID:AppleClang>:-Wno-unknown-pragmas -Wall -Werror -Wno-c++11-long-long>
         PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-unknown-pragmas -Wall -Werror -Wno-c++11-long-long>)
+endif()
 
 target_sources(${SDK_LIBRARY}
         PRIVATE
