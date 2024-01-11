@@ -4,12 +4,7 @@ project(livox_sdk)
 
 message(STATUS "main project dir: " ${PROJECT_SOURCE_DIR})
 
-# This variable is set by project() in CMake 3.21+
-string(COMPARE EQUAL "${CMAKE_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}" PROJECT_IS_TOP_LEVEL)
-
-if(PROJECT_IS_TOP_LEVEL)
-	option(shared_DEVELOPER_MODE "Enable developer mode" OFF)
-endif()
+include(cmake/variables-and-options.cmake)
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -27,10 +22,8 @@ if(WIN32)
 	add_compile_definitions("WIN32")
 endif(WIN32)
 
-# Always build the core SDK library
 add_subdirectory(sdk_core sdk_core)
-# Only build the samples if this is the top-level project
-if(PROJECT_IS_TOP_LEVEL)
+if(BUILD_SAMPLES)
 	add_subdirectory(sample/hub)
 	add_subdirectory(sample/lidar)
 	add_subdirectory(sample/hub_lvx_file)
