@@ -25,6 +25,7 @@
 #ifndef LIVOX_THREAD_BASE_H_
 #define LIVOX_THREAD_BASE_H_
 #include <atomic>
+#include <memory>
 #include <thread>
 #include "noncopyable.h"
 
