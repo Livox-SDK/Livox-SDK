@@ -23,6 +23,10 @@ if (UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif(UNIX)
 
+if(WIN32)
+	add_compile_definitions("WIN32")
+endif(WIN32)
+
 # Always build the core SDK library
 add_subdirectory(sdk_core sdk_core)
 # Only build the samples if this is the top-level project
