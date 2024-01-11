@@ -4,14 +4,15 @@ include(CMakePackageConfigHelpers)
 # Name of the package to use when calling find_package(<package>) in consumer code
 set(package livox_sdk)
 
-# Install target types (ARCHIVE, LIBRARY, PUBLIC_HEADER, ...) to default locations (lib, include)
-# and create an export.
-install(TARGETS ${SDK_LIBRARY} EXPORT livox_sdkTargets)
+set(livox_sdk_INSTALL_LIBDIR "${CMAKE_INSTALL_LIBDIR}/${package}")
+set(livox_sdk_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/${package}")
+set(livox_sdk_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${package}")
 
-# Allow package maintainers to freely override the path for the configs
-set(livox_sdk_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${package}"
-    CACHE PATH "CMake package config location relative to the install prefix")
-mark_as_advanced(livox_sdk_INSTALL_CMAKEDIR)
+# Install target types to the given destinations and create an export.
+install(TARGETS ${SDK_LIBRARY} EXPORT livox_sdkTargets
+    ARCHIVE DESTINATION "${livox_sdk_INSTALL_LIBDIR}"
+    LIBRARY DESTINATION "${livox_sdk_INSTALL_LIBDIR}"
+    PUBLIC_HEADER DESTINATION "${livox_sdk_INSTALL_INCLUDEDIR}")
 
 # Copy the package config file to the install location and give it the correct name
 install(FILES ../cmake/install-config.cmake
