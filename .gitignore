@@ -1,14 +1,7 @@
+.cache/
+.vs/
+.vscode/
+/[Bb]uild
 
-# ignore dir
-#build/
-build/*.txt
-build/Makefile
-build/*.cmake
-build/CMakeFiles
-build/sdk_core
-build/sample
-
-#whitelist
-!build/notes.txt
-
-
+compile_commands.json
+CMakeUserPresets.json
