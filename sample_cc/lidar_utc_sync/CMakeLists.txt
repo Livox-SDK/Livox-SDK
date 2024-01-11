@@ -11,3 +11,7 @@ target_link_libraries(${DEMO_NAME}
         PRIVATE
         ${PROJECT_NAME}_static
         )
+target_include_directories(${DEMO_NAME}
+        PRIVATE
+        "${CMAKE_SOURCE_DIR}/sdk_core/include/third_party/cmdline"
+        )
