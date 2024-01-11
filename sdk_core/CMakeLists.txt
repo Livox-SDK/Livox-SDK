@@ -12,10 +12,10 @@ set(LIVOX_SDK_VERSION_STRING "${LIVOX_SDK_MAJOR_VERSION}.${LIVOX_SDK_MINOR_VERSI
 
 target_include_directories(${SDK_LIBRARY}
         PUBLIC
-        include
-        include/third_party/FastCRC
-        include/third_party/spdlog
-        include/third_party/cmdline
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/third_party/FastCRC>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/third_party/spdlog>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/third_party/cmdline>"
         PRIVATE
         src)
 
