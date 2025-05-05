@@ -1,3 +1,4 @@
+#include <memory>
 //
 // The MIT License (MIT)
 //
